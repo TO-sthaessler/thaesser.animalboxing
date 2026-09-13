@@ -10,7 +10,7 @@ Dependencies. Doppelklick genügt, oder über GitHub Pages hosten.
 
 | | |
 |---|---|
-| **7 Kämpfer** | vollzählig |
+| **7 Kämpfer** | vollzählig, plus beliebig viele eigene |
 | **10 Rollen** | Statprofil + echte Mechanik, frei zuweisbar |
 | **56 Gegner** | mit halbwegs echten Werten (Gewicht, Beisskraft, Tempo, Aggression), inklusive sechs Dinosauriern |
 | **8 Arenen** | animiert, mit Vordergrund-Ebene |
@@ -48,6 +48,25 @@ A('wolf', 'Wolf', 'Hunde', 45, 400, 60, 8, 1,
 
 Vorhandene Baupläne: `quad` (Vierbeiner), `bird`, `snake`, `insect`, `spider`,
 `scorpion`, `primate`, `kangaroo`, `croc`, `human`.
+
+## Eigene Kämpfer
+
+Unter den sieben festen steht eine gestrichelte Karte mit einem grossen
+**+**. Dort legt man beliebig viele eigene an: Name eintippen, Rolle aus
+dem Dropdown (eine ist schon zufällig vorbelegt), Outfit würfeln bis es
+passt, anlegen.
+
+Das Outfit wird aus allem gewürfelt, was der Mensch-Bauplan kann —
+Frisuren, Bärte, Brillen, Karohemden, Kapuzenpullis, Trachtenhüte,
+Tattoos, Umhängetaschen. Jede eigene Karte hat zwei Knöpfe: 🎲 würfelt
+das Outfit neu, ✕ löscht.
+
+**Gespeichert wird nur im Browser** (`localStorage`, Schlüssel
+`ab_custom_v1`). Die eigenen Kämpfer überleben einen Reload, gehen aber
+nicht mit, wenn jemand anders die Seite öffnet oder ihr das Gerät
+wechselt. Im privaten Fenster bleiben sie nur für die Sitzung.
+
+Eigene Kämpfer treten nur im eigenen Team an, nicht als Gegner.
 
 ## Die 10 Rollen
 

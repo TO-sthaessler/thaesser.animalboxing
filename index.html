@@ -61,6 +61,19 @@ button.on,button.ghost.on{background:var(--nes-yellow);color:#06101e;border-colo
 .card .tag{font-size:7px;color:var(--nes-dim);text-align:center;line-height:1.6}
 .card canvas{image-rendering:pixelated}
 .card .chk{position:absolute;top:4px;right:6px;font-size:10px;color:var(--nes-yellow);display:none}
+.card.add{border-style:dashed;border-color:#4d5f92;justify-content:center;min-height:150px}
+.card.add:hover{border-color:var(--nes-yellow);background:#233055}
+.card.add .plus{font-size:34px;color:#7f92c4;line-height:1}
+.card.add:hover .plus{color:var(--nes-yellow)}
+.card .tools{display:flex;gap:5px;margin-top:2px}
+.card .tools button{padding:4px 7px;font-size:8px;box-shadow:0 0 0 2px #000}
+.card .eigen{position:absolute;top:4px;left:6px;font-size:6px;color:#7f92c4}
+#new-fighter{display:none}
+#new-fighter.on{display:block}
+#nf-preview{display:flex;justify-content:center;align-items:flex-end;min-height:84px}
+#nf-preview canvas{image-rendering:pixelated}
+#new-fighter input,#new-fighter select{font-family:inherit;font-size:9px;padding:8px;
+  background:#0b1120;color:var(--nes-ink);border:3px solid #3a4870;width:100%}
 .card .itembox{display:none;flex-direction:column;align-items:center;gap:4px;width:100%;
   border-top:2px solid #3a4870;padding-top:6px;margin-top:2px}
 .card.sel .itembox{display:flex}
@@ -1304,6 +1317,65 @@ const ITEM_BY_ID = id => ITEMS.find(i => i.id === id) || ITEMS[0];
 const ITEMS_SORTED = [ITEMS[0], ...ITEMS.slice(1).sort((a, b) => a.name.localeCompare(b.name, 'de'))];
 
 /* ============================================================
+   5c) EIGENE KÄMPFER
+   Werden nur im Browser gespeichert (localStorage), gehen also nicht
+   mit, wenn jemand anders die Seite oeffnet.
+   ============================================================ */
+const CUSTOM_KEY = 'ab_custom_v1';
+let customs = [];
+try { customs = JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]'); } catch (e) { customs = []; }
+function saveCustoms() {
+  try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(customs)); }
+  catch (e) { /* privates Fenster o.ae. — dann eben nur fuer diese Sitzung */ }
+}
+
+const pickOne = a => a[Math.floor(Math.random() * a.length)];
+const HAUT = ['#f4d6b6', '#f0c49a', '#e8b894', '#d9a273', '#c98a5e', '#a86a44', '#8a5232', '#6b4028'];
+const HAAR = ['#2b211c', '#3e2f24', '#5a4030', '#8a6a3a', '#bf9a62', '#dcc98e', '#a83a2a', '#8a8a92', '#eaeaf0', '#d4739e', '#3a6ed0'];
+const STOFF = ['#3a6ed0', '#d03a3a', '#37a860', '#e0b528', '#8b46c8', '#20b4c8', '#f0f0f2', '#1f6b4a', '#d84a7a', '#2a2f3e', '#e07a2a'];
+const HOSE = ['#22304e', '#2a2a3a', '#3b4a6e', '#1c1c22', '#d4bd92', '#4a4a52', '#5a3a24'];
+const SCHUH = ['#23232b', '#e4e4e8', '#5a3a24', '#2f3a4a'];
+const FRISUR = ['short', 'buzz', 'long', 'bun', 'curly', 'wild', 'mohawk', 'bald', 'fringe', 'cap'];
+
+/* Wuerfelt ein komplettes Outfit aus allem, was der Mensch-Bauplan kann. */
+function randomLook() {
+  const haar = pickOne(HAAR);
+  const look = {
+    skin: pickOne(HAUT), hair: haar, hairStyle: pickOne(FRISUR),
+    shirt: pickOne(STOFF), pants: pickOne(HOSE), shoe: pickOne(SCHUH),
+    build: pickOne(['slim', 'normal', 'normal', 'big'])
+  };
+  if (look.hairStyle === 'cap') look.acc = pickOne(STOFF);
+  const bart = pickOne([null, null, null, 'stubble', 'stubble', 'full', 'goatee', 'moustache']);
+  if (bart) { look.beard = bart; look.beardCol = Math.random() < .3 ? pickOne(HAAR) : haar; }
+  const r = Math.random();
+  if (r < .22) look.glasses = 1; else if (r < .38) look.shades = 1; else if (r < .5) look.shadesUp = 1;
+  if (Math.random() < .5) look.shortSleeve = 1;
+  if (Math.random() < .35) { look.shorts = 1; look.socks = '#f4f4f6'; }
+  if (Math.random() < .2) look.bag = 1;
+  if (Math.random() < .28) look.watch = 1;
+  if (Math.random() < .15) look.tattoo = 1;
+  if (Math.random() < .15) look.earring = 1;
+  if (Math.random() < .18 && !look.hat) look.hood = 1;
+  if (Math.random() < .2) {
+    look.shirtPat = pickOne(['diag', 'stripes', 'check', 'panel']);
+    look.shirt2 = pickOne(STOFF); look.shirt3 = '#1a1a1f';
+  }
+  if (Math.random() < .08) { look.hat = 'tracht'; look.hatCol = pickOne(['#2e4a34', '#5a3a24', '#2a2f3e']); look.hood = 0; }
+  if (Math.random() < .1) { look.jacket = 1; look.jacketCol = pickOne(['#5e6154', '#3a3a44', '#6a4a32']); }
+  if (Math.random() < .1) look.sash = 1;
+  return look;
+}
+
+/* Alle waehlbaren Kaempfer: die sieben festen plus die eigenen. */
+const customDef = c => F(c.id, c.name, c.role, c.look);
+let roster = [];
+function rebuildRoster() { roster = [...FIGHTERS, ...customs.map(customDef)]; }
+const findFighter = id => roster.find(f => f.id === id);
+/* Sprite-Cache fuer eine ID leeren — noetig, wenn das Outfit neu gewuerfelt wird */
+function invalidateSprite(id) { spriteCache.delete(id); spriteCache.delete(id + '@sieg'); }
+
+/* ============================================================
    6) KAMPF-MATHEMATIK
    ============================================================ */
 const TUNE = { mitig: 22, cleaveChain: 3, baseRate: 0.048 };
@@ -2143,6 +2215,26 @@ app.innerHTML = `
     </div>
     <div class="grid-fighters" id="fighter-grid" style="margin-top:12px"></div>
   </div>
+  <div class="panel" id="new-fighter">
+    <div style="font-size:11px">EIGENEN KÄMPFER ANLEGEN</div>
+    <div class="sub" style="text-align:left;margin-top:8px">
+      Wird nur in diesem Browser gespeichert.
+    </div>
+    <div id="nf-preview" style="margin-top:12px"></div>
+    <div class="row" style="margin-top:12px;gap:8px;align-items:stretch">
+      <div style="flex:2 1 160px"><div class="tag" style="text-align:left">NAME</div>
+        <input id="nf-name" maxlength="14" placeholder="Name..." autocomplete="off"></div>
+      <div style="flex:2 1 160px"><div class="tag" style="text-align:left">ROLLE</div>
+        <select id="nf-role"></select></div>
+    </div>
+    <div class="tag" id="nf-roledesc" style="text-align:left;margin-top:8px;color:var(--nes-green)"></div>
+    <div class="row" style="margin-top:14px;gap:8px">
+      <button class="ghost" id="nf-roll">🎲 Outfit würfeln</button>
+      <button class="primary" id="nf-ok">Anlegen</button>
+      <button class="ghost" id="nf-cancel">Abbrechen</button>
+    </div>
+  </div>
+
   <div class="panel dark">
     <div class="row spread" style="cursor:pointer" id="roles-toggle">
       <div style="font-size:10px">ROLLEN-ÜBERSICHT</div>
@@ -2256,48 +2348,98 @@ function thumb(def, scale = 3) {
 
 /* --- Team-Auswahl --- */
 const picked = new Map();   /* Kämpfer-ID -> Gegenstand-ID */
+function fighterCard(f, eigen) {
+  const d = document.createElement('div');
+  d.className = 'card' + (picked.has(f.id) ? ' sel' : '');
+  d.dataset.id = f.id;
+  const s = statsOf(f);
+  d.title = f.was;
+  d.innerHTML = `<div class="chk">✔</div>${eigen ? '<div class="eigen">eigen</div>' : ''}
+    <div class="nm">${f.name}</div>
+    <div class="tag" style="color:var(--nes-yellow)">${f.tag}</div>
+    <div class="tag">${f.kurz}</div>
+    <div class="tag st">HP ${s.hp} · ATK ${s.atk}<br>DEF ${s.def} · SPD ${s.spd}</div>
+    ${eigen ? '<div class="tools"><button class="ghost" data-act="roll" title="Outfit neu würfeln">🎲</button><button class="ghost" data-act="del" title="Löschen">✕</button></div>' : ''}
+    <div class="itembox">
+      <div class="icw"></div>
+      <select class="item-pick">${ITEMS_SORTED.map(i => `<option value="${i.id}">${i.name}</option>`).join('')}</select>
+      <div class="tag it-desc"></div>
+    </div>`;
+  d.insertBefore(thumb(f, 3), d.children[eigen ? 2 : 1]);
+
+  const sel = d.querySelector('.item-pick'), icw = d.querySelector('.icw'),
+        desc = d.querySelector('.it-desc'), st = d.querySelector('.st');
+  if (picked.has(f.id)) sel.value = picked.get(f.id);
+  const paintItem = () => {
+    const it = ITEM_BY_ID(sel.value), m = it.mod || {};
+    icw.innerHTML = ''; if (it.build) icw.appendChild(thumb(it, 3));
+    desc.textContent = it.kurz;
+    if (picked.has(f.id)) picked.set(f.id, it.id);
+    const mark = (base, add) => add ? `<span style="color:${add > 0 ? 'var(--nes-green)' : 'var(--nes-red)'}">${base + add}</span>` : base;
+    st.innerHTML = `HP ${mark(s.hp, m.hp || 0)} · ATK ${mark(s.atk, m.atk || 0)}<br>` +
+                   `DEF ${mark(s.def, m.def || 0)} · SPD ${mark(s.spd, m.spd || 0)}`;
+  };
+  sel.onclick = e => e.stopPropagation();
+  sel.onchange = e => { e.stopPropagation(); paintItem(); };
+  paintItem();
+
+  d.querySelectorAll('.tools button').forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    const c = customs.find(x => x.id === f.id); if (!c) return;
+    if (b.dataset.act === 'roll') {
+      c.look = randomLook(); saveCustoms(); invalidateSprite(c.id); rebuildRoster(); buildFighterGrid();
+    } else {
+      customs = customs.filter(x => x.id !== c.id); picked.delete(c.id);
+      saveCustoms(); invalidateSprite(c.id); rebuildRoster(); buildFighterGrid(); updateSelCount();
+    }
+  });
+
+  d.onclick = () => {
+    if (picked.has(f.id)) picked.delete(f.id); else picked.set(f.id, sel.value);
+    d.classList.toggle('sel', picked.has(f.id));
+    updateSelCount();
+  };
+  return d;
+}
+
+function updateSelCount() {
+  $('#sel-count').textContent = picked.size + ' ausgewählt';
+  $('#btn-to-enemy').disabled = picked.size === 0;
+}
+
 function buildFighterGrid() {
   const g = $('#fighter-grid'); g.innerHTML = '';
-  FIGHTERS.forEach(f => {
-    const d = document.createElement('div'); d.className = 'card'; d.dataset.id = f.id;
-    const s = statsOf(f);
-    d.title = f.was;
-    d.innerHTML = `<div class="chk">✔</div><div class="nm">${f.name}</div>
-      <div class="tag" style="color:var(--nes-yellow)">${f.tag}</div>
-      <div class="tag">${f.kurz}</div>
-      <div class="tag st">HP ${s.hp} · ATK ${s.atk}<br>DEF ${s.def} · SPD ${s.spd}</div>
-      <div class="itembox">
-        <div class="icw"></div>
-        <select class="item-pick">${ITEMS_SORTED.map(i => `<option value="${i.id}">${i.name}</option>`).join('')}</select>
-        <div class="tag it-desc"></div>
-      </div>`;
-    d.insertBefore(thumb(f, 3), d.children[1]);
+  FIGHTERS.forEach(f => g.appendChild(fighterCard(f, false)));
+  customs.forEach(c => g.appendChild(fighterCard(customDef(c), true)));
 
-    const sel = d.querySelector('.item-pick'), icw = d.querySelector('.icw'),
-          desc = d.querySelector('.it-desc'), st = d.querySelector('.st');
-    const paintItem = () => {
-      const it = ITEM_BY_ID(sel.value), m = it.mod || {};
-      icw.innerHTML = ''; if (it.build) icw.appendChild(thumb(it, 3));
-      desc.textContent = it.kurz;
-      if (picked.has(f.id)) picked.set(f.id, it.id);
-      /* Werte inklusive Gegenstand anzeigen */
-      const mark = (base, add) => add ? `<span style="color:${add > 0 ? 'var(--nes-green)' : 'var(--nes-red)'}">${base + add}</span>` : base;
-      st.innerHTML = `HP ${mark(s.hp, m.hp || 0)} · ATK ${mark(s.atk, m.atk || 0)}<br>` +
-                     `DEF ${mark(s.def, m.def || 0)} · SPD ${mark(s.spd, m.spd || 0)}`;
-    };
-    sel.onclick = e => e.stopPropagation();
-    sel.onchange = e => { e.stopPropagation(); paintItem(); };
-    paintItem();
-
-    d.onclick = () => {
-      if (picked.has(f.id)) picked.delete(f.id); else picked.set(f.id, sel.value);
-      d.classList.toggle('sel', picked.has(f.id));
-      $('#sel-count').textContent = picked.size + ' ausgewählt';
-      $('#btn-to-enemy').disabled = picked.size === 0;
-    };
-    g.appendChild(d);
-  });
+  const add = document.createElement('div');
+  add.className = 'card add';
+  add.innerHTML = '<div class="plus">+</div><div class="nm">Kämpfer<br>anlegen</div>';
+  add.onclick = openNewFighter;
+  g.appendChild(add);
 }
+
+/* --- Dialog "eigenen Kämpfer anlegen" --- */
+let nfLook = null;
+function paintNewFighter() {
+  const box = $('#nf-preview'); box.innerHTML = '';
+  const vorschau = { id: '@vorschau' + Math.random(), pal: PH(nfLook), build: () => human(nfLook) };
+  box.appendChild(thumb(vorschau, 3));
+  spriteCache.delete(vorschau.id);
+  const r = ROLES[$('#nf-role').value];
+  $('#nf-roledesc').textContent = r ? r.was : '';
+}
+function openNewFighter() {
+  nfLook = randomLook();
+  $('#nf-role').innerHTML = Object.entries(ROLES).map(([k, r]) => `<option value="${k}">${r.name} — ${r.kurz}</option>`).join('');
+  $('#nf-role').value = pickOne(Object.keys(ROLES));       /* Vorschlag, aenderbar */
+  $('#nf-name').value = '';
+  $('#new-fighter').classList.add('on');
+  paintNewFighter();
+  $('#nf-name').focus();
+  $('#new-fighter').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function closeNewFighter() { $('#new-fighter').classList.remove('on'); }
 
 /* --- Arena-Auswahl mit echten Vorschaubildern ---------------------
    Für die Vorschau wird die Arena ganz normal gerendert, nur in den
@@ -2505,13 +2647,13 @@ function setPaused(p) {
 }
 
 function teamLabel(side) {
-  if (side === 0) return [...picked.keys()].map(id => FIGHTERS.find(f => f.id === id).name).join(' + ');
+  if (side === 0) return [...picked.keys()].map(id => (findFighter(id) || { name: '?' }).name).join(' + ');
   const parts = []; enemyCount.forEach((n, id) => parts.push(n + '× ' + ANIMALS.find(a => a.id === id).name));
   return parts.join(' + ');
 }
 
 function startBattle() {
-  const team = [...picked].map(([id, item]) => ({ def: FIGHTERS.find(f => f.id === id), item }));
+  const team = [...picked].map(([id, item]) => ({ def: findFighter(id), item })).filter(e => e.def);
   const foes = []; enemyCount.forEach((n, id) => foes.push({ def: ANIMALS.find(a => a.id === id), n }));
   world = createWorld(team, foes);
   phase = 'intro'; pt = 0; logIdx = 0; lastTs = 0; setPaused(false);
@@ -3143,6 +3285,19 @@ $('#roles-toggle').onclick = () => {
 };
 
 buildRoleList();
+$('#nf-roll').onclick = () => { nfLook = randomLook(); paintNewFighter(); };
+$('#nf-role').onchange = paintNewFighter;
+$('#nf-cancel').onclick = closeNewFighter;
+$('#nf-name').onkeydown = e => { if (e.key === 'Enter') $('#nf-ok').click(); };
+$('#nf-ok').onclick = () => {
+  const name = ($('#nf-name').value || '').trim().slice(0, 14) || 'Namenlos';
+  const c = { id: 'c' + Date.now().toString(36) + Math.floor(Math.random() * 999).toString(36),
+              name, role: $('#nf-role').value, look: nfLook };
+  customs.push(c); saveCustoms(); rebuildRoster(); buildFighterGrid();
+  closeNewFighter();
+};
+
+rebuildRoster();
 buildFighterGrid();
 buildEnemyList();
 buildArenaGrid();
