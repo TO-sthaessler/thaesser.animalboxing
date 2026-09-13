@@ -10,7 +10,7 @@ Dependencies. Doppelklick genügt, oder über GitHub Pages hosten.
 
 | | |
 |---|---|
-| **7 Kämpfer** | Tizi und Ole stehen, der Rest ist Platzhalter bis die Fotos da sind |
+| **7 Kämpfer** | fünf stehen, zwei Plätze sind noch Platzhalter |
 | **10 Rollen** | Statprofil + echte Mechanik, frei zuweisbar |
 | **50 Gegner** | mit halbwegs echten Werten (Gewicht, Beisskraft, Tempo, Aggression) |
 | **4 Arenen** | Wiese, Dojo, Strand, Parkhaus |
@@ -71,8 +71,11 @@ Rollen dürfen doppelt vergeben werden.
 |---|---|
 | Tizi | Der Blitz (Speedster) |
 | Ole | Der Schreihals (Support) |
+| Konrad | Der Ruhige (One-Punch) |
+| Hirschi | Der Taktiker (Krit-Jäger) |
+| Marsn | Der Tritt-König (Anti-Schwarm) |
 
-Noch frei: Fels, Faust, Taktiker, Wand, Chaos, One-Punch, Tritt-König, Überlebender.
+Noch frei: Fels, Faust, Wand, Chaos, Überlebender.
 
 ## Glück
 
@@ -105,9 +108,16 @@ Signatur: `F(id, Name, Rolle, Aussehen)`. Verfügbare Aussehen-Optionen:
 * Flags: `shades` (Sonnenbrille), `glasses` (kräftiger Rahmen), `shorts`,
   `shortSleeve` (T-Shirt statt Langarm), `socks`, `bag` (Umhängetasche),
   `watch`, `earring`, `tattoo` (Unterarm), `logo`, `tall`
-* `shirtPat`: `diag` (Trikot mit Diagonalen) oder `stripes`
+* `shirtPat`: `diag` (Trikot mit Diagonalen), `stripes`, `check` (Karohemd)
+  oder `panel` (andersfarbige Partie auf einer Seite). Liegt über Rumpf
+  und Ärmeln.
+* `hood: 1` für Kapuzenpulli (Kapuze im Nacken plus Kordeln)
+* `hairStyle` zusätzlich: `fringe` (Pony)
 * Farben: `skin` `hair` `beardCol` `shirt` `shirt2` `shirt3` `pants` `shoe`
   `lens` `bagCol` `tattooCol` `jewel` `line`
+
+`beard: 'stubble'` wird als 50-Prozent-Dither auf echten Pixeln gezeichnet,
+nicht als Block — sieht dadurch wie Bartschatten aus statt wie ein Balken.
 * `build`: `slim` | `normal` | `big`
 
 Ole als Beispiel für die neuen Optionen:

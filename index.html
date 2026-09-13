@@ -543,22 +543,7 @@ function human(o = {}) {
   rect(g, cx - w, sh, w * 2, hip - sh + 1, '1');
   rect(g, cx - w, hip - 1, w * 2, 1, '2');
   rect(g, cx - 1.4, sh - .3, 2.8, .7, '2');            /* Kragen */
-  if (o.shirtPat === 'diag') {                          /* Trikot mit Diagonalen */
-    maskedDraw(g, () => {
-      for (const off of [-2.6, .6, 3.8]) {
-        lineTo(g, cx - w - 1 + off, hip + 1, cx - w + 3.4 + off, sh - 1, 'd', 1.6);
-      }
-    }, ['1', '2'], 'd');
-    maskedDraw(g, () => {
-      for (const off of [-1.4, 1.8, 5]) {
-        lineTo(g, cx - w - 1 + off, hip + 1, cx - w + 3.4 + off, sh - 1, 'e', .7);
-      }
-    }, ['1', '2', 'd'], 'e');
-  } else if (o.shirtPat === 'stripes') {
-    maskedDraw(g, () => {
-      for (let i = -w; i < w; i += 2.4) rect(g, cx + i, sh, 1.2, hip - sh + 1, 'd');
-    }, ['1', '2'], 'd');
-  }
+
 
   /* Arme — bei kurzen Aermeln liegt der Unterarm frei */
   const slv = o.shortSleeve ? 2 : 4.2;
@@ -570,7 +555,42 @@ function human(o = {}) {
   }
   ell(g, cx - w - 1.1, sh + 4.8, 1.3, 1.3, '3');
   ell(g, cx + w + 1.1, sh + 4.8, 1.3, 1.3, '3');
-  if (o.watch) rect(g, cx + w + .1, sh + 3.8, 1.9, 1, '4');
+
+  /* Stoffmuster liegt über Rumpf UND Ärmeln */
+  if (o.shirtPat === 'diag') {
+    maskedDraw(g, () => {
+      for (const off of [-2.6, .6, 3.8]) lineTo(g, cx - w - 1 + off, hip + 1, cx - w + 3.4 + off, sh - 1, 'd', 1.6);
+    }, ['1', '2'], 'd');
+    maskedDraw(g, () => {
+      for (const off of [-1.4, 1.8, 5]) lineTo(g, cx - w - 1 + off, hip + 1, cx - w + 3.4 + off, sh - 1, 'e', .7);
+    }, ['1', '2', 'd'], 'e');
+  } else if (o.shirtPat === 'stripes') {
+    maskedDraw(g, () => {
+      for (let i = -w; i < w; i += 2.4) rect(g, cx + i, sh, 1.2, hip - sh + 1, 'd');
+    }, ['1', '2'], 'd');
+  } else if (o.shirtPat === 'check') {          /* Karohemd */
+    const x0 = cx - w - 2.4, x1 = cx + w + 2.4, y1 = hip + 1;
+    maskedDraw(g, () => {
+      for (let i = x0; i <= x1; i += 3.6) rect(g, i, sh - 1, .8, y1 - sh + 2, 'd');
+      for (let j = sh; j <= y1; j += 3.6) rect(g, x0, j, x1 - x0, .8, 'd');
+    }, ['1', '2'], 'd');
+    maskedDraw(g, () => {
+      for (let i = x0 + 1.8; i <= x1; i += 3.6) rect(g, i, sh - 1, .45, y1 - sh + 2, 'e');
+      for (let j = sh + 1.8; j <= y1; j += 3.6) rect(g, x0, j, x1 - x0, .45, 'e');
+    }, ['1', '2', 'd'], 'e');
+  } else if (o.shirtPat === 'panel') {          /* andersfarbige Partie auf einer Seite */
+    maskedDraw(g, () => {
+      rect(g, cx - w - 2.4, sh, w * .75 + 2.4, (hip - sh) * .62, 'd');
+    }, ['1', '2'], 'd');
+  }
+  if (o.hood) {                                  /* Kapuze im Nacken */
+    ell(g, cx, sh - .2, w + 1.5, 2.3, '2');
+    ell(g, cx, sh - .9, w - .4, 1.5, '1');
+    rect(g, cx - 1.6, sh + 1.4, .5, 2.6, '9');   /* Kordel */
+    rect(g, cx + 1.2, sh + 1.4, .5, 2.6, '9');
+  }
+
+  if (o.watch) { rect(g, cx + w + .1, sh + 3.6, 1.9, 1.4, '4'); px(g, cx + w + 1, sh + 4, 'g'); }
   if (o.tattoo) {                                       /* tätowierter Unterarm */
     maskedDraw(g, () => {
       ell(g, cx + w + 1, sh + 2.8, .8, .7, 'f');
@@ -586,46 +606,56 @@ function human(o = {}) {
   /* Haare */
   const hs = o.hairStyle || 'short';
   if (hs !== 'bald') {
-    if (hs === 'cap') { ell(g, cx, headY - 1.4, hr + .3, 2.1, '8'); rect(g, cx - .4, headY - .4, hr + 2.6, 1, '8'); }
+    if (hs === 'cap') { ell(g, cx, headY - 2, hr + .3, 1.9, '8'); rect(g, cx - .4, headY - .9, hr + 2.6, .9, '8'); }
     else {
-      if (hs === 'buzz') ell(g, cx, headY - 1.9, hr - .1, 1.3, '5');
-      else ell(g, cx, headY - 1.5, hr + .2, 2.1, '5');
-      if (hs === 'long') { rect(g, cx - hr - .4, headY - 1.4, 1.6, 6.4, '5'); rect(g, cx + hr - 1.2, headY - 1.4, 1.6, 6.4, '5'); }
-      if (hs === 'bun') ell(g, cx - .4, headY - 4, 1.7, 1.5, '5');
-      if (hs === 'curly') { for (let i = -3; i <= 3; i++) ell(g, cx + i * 1.1, headY - 2.4 - (i % 2 ? .8 : 0), 1.2, 1.1, '5'); }
-      if (hs === 'mohawk') rect(g, cx - 1, headY - 5.4, 2.2, 3, '5');
-      if (hs === 'wild') { for (let i = -3; i <= 3; i++) tri(g, cx + i * 1.1, headY - 2, cx + i * 1.3, headY - 5.2, cx + i * 1.1 + 1.2, headY - 2, '5'); }
+      if (hs === 'buzz') ell(g, cx, headY - 2.7, hr - .1, 1.3, '5');
+      else ell(g, cx, headY - 2.5, hr + .15, 1.75, '5');
+      if (hs === 'fringe') {
+        ell(g, cx, headY - 2.3, hr + .25, 1.8, '5');
+        tri(g, cx - hr - .4, headY - 2.7, cx + hr + .4, headY - 3.1, cx - hr + 1.6, headY - .7, '5');
+        rect(g, cx + hr - 1.1, headY - 2.7, 1.4, 2.1, '5');
+      }
+      if (hs === 'long') { rect(g, cx - hr - .4, headY - 2, 1.6, 6.8, '5'); rect(g, cx + hr - 1.2, headY - 2, 1.6, 6.8, '5'); }
+      if (hs === 'bun') ell(g, cx - .4, headY - 4.4, 1.7, 1.5, '5');
+      if (hs === 'curly') { for (let i = -3; i <= 3; i++) ell(g, cx + i * 1.05, headY - 3 - (i % 2 ? .7 : 0), 1.2, 1.1, '5'); }
+      if (hs === 'mohawk') rect(g, cx - 1, headY - 5.8, 2.2, 3.2, '5');
+      if (hs === 'wild') { for (let i = -3; i <= 3; i++) tri(g, cx + i * 1.1, headY - 2.4, cx + i * 1.3, headY - 5.6, cx + i * 1.1 + 1.2, headY - 2.4, '5'); }
     }
   }
   /* Bart */
-  if (o.beard === 'full') { ell(g, cx, headY + 2.1, hr - .1, 1.9, 'h'); rect(g, cx - 1.2, headY + 1.6, 2.6, 1, '3'); }
-  else if (o.beard === 'stubble') { for (let i = -2; i <= 2; i++) { px(g, cx + i, headY + 2.5, 'h'); px(g, cx + i, headY + 1.7, 'h'); } px(g, cx - 2.8, headY + 1.4, 'h'); px(g, cx + 2.8, headY + 1.4, 'h'); }
-  else if (o.beard === 'goatee') rect(g, cx - 1.2, headY + 2.2, 2.6, 1.8, 'h');
-  else if (o.beard === 'moustache') { rect(g, cx - 1.7, headY + 1.3, 3.5, 1.1, 'h'); px(g, cx - 2, headY + 1.6, 'h'); px(g, cx + 1.7, headY + 1.6, 'h'); }
+  if (o.beard === 'full') { ell(g, cx, headY + 2.7, hr - .35, 1.7, 'h'); rect(g, cx - 1.1, headY + 2.2, 2.4, .9, '3'); }
+  else if (o.beard === 'stubble') {
+    const bx0 = Math.round((cx - 2.7) * R), bx1 = Math.round((cx + 2.7) * R);
+    const by0 = Math.round((headY + 1.6) * R), by1 = Math.round((headY + 3.4) * R);
+    for (let Y = by0; Y <= by1; Y++) for (let X = bx0; X <= bx1; X++)
+      if ((X + Y) % 2 === 0 && g[Y] && g[Y][X] === '3') g[Y][X] = 'h';
+  }
+  else if (o.beard === 'goatee') rect(g, cx - 1.2, headY + 2.6, 2.6, 1.8, 'h');
+  else if (o.beard === 'moustache') { rect(g, cx - 1.7, headY + 1.8, 3.5, 1.1, 'h'); px(g, cx - 2, headY + 2.1, 'h'); px(g, cx + 1.7, headY + 2.1, 'h'); }
 
   /* Gesicht */
-  ell(g, cx - hr + .2, headY + .4, .9, 1.1, '3');     /* Ohr */
-  px(g, cx - hr + .1, headY + .4, 'c');
-  if (o.earring) px(g, cx - hr + .2, headY + 1.4, 'g');
-  px(g, cx - 1.5, headY - .2, '4'); px(g, cx + 1.5, headY - .2, '4');
-  glint(g, cx - 1.5, headY - .2); glint(g, cx + 1.5, headY - .2);
-  px(g, cx, headY + .7, 'c');                          /* Nase */
-  const mouthY = headY + (o.beard === 'moustache' ? 2.5 : o.beard === 'full' ? 1.6 : 1.6);
+  ell(g, cx - hr + .2, headY + .9, .9, 1.1, '3');     /* Ohr */
+  px(g, cx - hr + .1, headY + .9, 'c');
+  if (o.earring) px(g, cx - hr + .2, headY + 1.9, 'g');
+  px(g, cx - 1.5, headY + .3, '4'); px(g, cx + 1.5, headY + .3, '4');
+  glint(g, cx - 1.5, headY + .3); glint(g, cx + 1.5, headY + .3);
+  px(g, cx, headY + 1.2, 'c');                         /* Nase */
+  const mouthY = headY + (o.beard === 'moustache' ? 3 : 2.1);
   px(g, cx - .5, mouthY, '4'); px(g, cx + .5, mouthY, '4');
-  rect(g, cx - 1, headY + 2.9, 2, .5, 'c');            /* Hals-Schatten */
+  rect(g, cx - 1, headY + 3.3, 2, .5, 'c');            /* Hals-Schatten */
   if (o.glasses) {                                      /* kräftiger Rahmen */
-    rect(g, cx - 3, headY - 1.3, 2.9, 2.6, '4');
-    rect(g, cx + .1, headY - 1.3, 2.9, 2.6, '4');
-    rect(g, cx - 2.6, headY - .9, 2.1, 1.8, '9');
-    rect(g, cx + .5, headY - .9, 2.1, 1.8, '9');
-    px(g, cx - 1.6, headY - .2, '4'); px(g, cx + 1.4, headY - .2, '4');
-    rect(g, cx - .2, headY - .7, .6, .7, '4');
-    rect(g, cx - 3.4, headY - .9, .5, .7, '4'); rect(g, cx + 2.9, headY - .9, .5, .7, '4');
+    rect(g, cx - 3, headY - .8, 2.9, 2.6, '4');
+    rect(g, cx + .1, headY - .8, 2.9, 2.6, '4');
+    rect(g, cx - 2.6, headY - .4, 2.1, 1.8, '9');
+    rect(g, cx + .5, headY - .4, 2.1, 1.8, '9');
+    px(g, cx - 1.6, headY + .3, '4'); px(g, cx + 1.4, headY + .3, '4');
+    rect(g, cx - .2, headY - .2, .6, .7, '4');
+    rect(g, cx - 3.4, headY - .4, .5, .7, '4'); rect(g, cx + 2.9, headY - .4, .5, .7, '4');
   }
   if (o.shades) {   /* dunkle Sonnenbrille — verdeckt die Augen */
-    rect(g, cx - 2.5, headY - .5, 2, 1.6, 'b');
-    rect(g, cx + .6, headY - .5, 2, 1.6, 'b');
-    px(g, cx - .5, headY - .1, '4'); px(g, cx + .5, headY - .1, '4');
+    rect(g, cx - 2.5, headY, 2, 1.6, 'b');
+    rect(g, cx + .6, headY, 2, 1.6, 'b');
+    px(g, cx - .5, headY + .4, '4'); px(g, cx + .5, headY + .4, '4');
   }
   if (o.bag) {      /* Umhaengetasche quer ueber die Brust */
     lineTo(g, cx + w - .6, sh - .4, cx - w + 1.4, sh + 4.4, 'a');
@@ -1006,12 +1036,24 @@ const FIGHTERS = [
     pants: '#1c1c22', shoe: '#26262e'
   }),
 
-  /* ---- Platzhalter, bis die restlichen Fotos da sind ---- */
-  F('p3', 'Kämpfer 3', 'faust', { skin: '#c98a5e', hair: '#201a16', hairStyle: 'curly', beard: 'stubble', shirt: '#d03a3a', pants: '#2a2a3a' }),
-  F('p4', 'Kämpfer 4', 'taktiker', { skin: '#f2d0b0', hair: '#5a4030', hairStyle: 'short', glasses: 1, shirt: '#37a860', pants: '#2c3550' }),
-  F('p5', 'Kämpfer 5', 'wand', { skin: '#e0a878', hair: '#1c1c22', hairStyle: 'bald', beard: 'goatee', shirt: '#8b46c8', pants: '#242c44', build: 'big' }),
+  F('konrad', 'Konrad', 'onepunch', {
+    skin: '#eec4a2', hair: '#6b4f35', hairStyle: 'short', beard: 'stubble', beardCol: '#7a6047',
+    shirt: '#4a5570', shirtPat: 'check', shirt2: '#d9cba6', shirt3: '#4e5c3e',
+    pants: '#2a2f3e', shoe: '#23232b'
+  }),
+  F('hirschi', 'Hirschi', 'taktiker', {
+    skin: '#f0cba6', hair: '#4a3a2c', hairStyle: 'fringe', beard: 'full', beardCol: '#a85c32',
+    shirt: '#7e8256', shirtPat: 'panel', shirt2: '#8fb4bc',
+    pants: '#2b3142', shoe: '#23232b', build: 'slim'
+  }),
+  F('marsn', 'Marsn', 'sweeper', {
+    skin: '#e8b892', hair: '#3e2f24', hairStyle: 'buzz', beard: 'stubble', beardCol: '#4a3a2c',
+    hood: 1, watch: 1, shirt: '#252b3a', pants: '#1e2230', shoe: '#22222a', build: 'big'
+  }),
+
+  /* ---- Platzhalter, bis die restlichen zwei Fotos da sind ---- */
   F('p6', 'Kämpfer 6', 'fels', { skin: '#e8b48c', hair: '#3a2a1e', hairStyle: 'buzz', beard: 'full', shirt: '#3a6ed0', pants: '#22304e', build: 'big' }),
-  F('p7', 'Kämpfer 7', 'onepunch', { skin: '#a86a44', hair: '#181820', hairStyle: 'bun', beard: 'moustache', shortSleeve: 1, shirt: '#f0f0f2', pants: '#1e2436' })
+  F('p7', 'Kämpfer 7', 'faust', { skin: '#c98a5e', hair: '#201a16', hairStyle: 'curly', beard: 'stubble', shirt: '#d03a3a', pants: '#2a2a3a' })
 ];
 
 /* ============================================================
