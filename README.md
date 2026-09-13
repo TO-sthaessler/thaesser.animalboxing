@@ -51,7 +51,7 @@ Vorhandene Baupläne: `quad` (Vierbeiner), `bird`, `snake`, `insect`, `spider`,
 
 ## Eigene Kämpfer
 
-Unter den sieben festen steht eine gestrichelte Karte mit einem grossen
+Ganz vorn im Raster steht eine gestrichelte Karte mit einem grossen
 **+**. Dort legt man beliebig viele eigene an: Name eintippen, Rolle aus
 dem Dropdown (eine ist schon zufällig vorbelegt), Outfit würfeln bis es
 passt, anlegen.
