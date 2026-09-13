@@ -20,7 +20,17 @@ Dependencies. Doppelklick genügt, oder über GitHub Pages hosten.
 ## Wie die Sprites entstehen
 
 Die Sprites sind nicht von Hand Pixel für Pixel gemalt, sondern werden aus
-Primitiven (Ellipse, Rechteck, Dreieck) auf ein 24×24-Raster **gerastert**.
+Primitiven (Ellipse, Rechteck, Dreieck) **gerastert**. Die Baupläne rechnen
+in einem 24×24-Design-Raster; die Konstante `R` legt fest, wie viele echte
+Pixel eine Design-Einheit bekommt.
+
+```js
+const R = 3;   // 72x72 Sprites. R=2 -> 48x48, R=1 -> 24x24
+```
+
+`R` hochdrehen erhöht den Detailgrad, ohne dass ein einziger Bauplan
+angefasst werden muss — Kurven und Kanten rastern einfach feiner.
+
 Jedes Tier ist ein *Körperbauplan* plus Parameter:
 
 ```js
