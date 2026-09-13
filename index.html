@@ -167,6 +167,17 @@ function autoShade(g, from = '1', to = '2') {
   }
   return out;
 }
+/* Dunkle Kontur aussen herum — lässt die Figuren vom Hintergrund abheben */
+function outline(g, ch = 'o') {
+  const h = g.length, w = g[0].length, out = g.map(r => r.slice());
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (g[y][x] !== '.') continue;
+    if ((y > 0 && g[y - 1][x] !== '.') || (y < h - 1 && g[y + 1][x] !== '.') ||
+        (x > 0 && g[y][x - 1] !== '.') || (x < w - 1 && g[y][x + 1] !== '.')) out[y][x] = ch;
+  }
+  return out;
+}
+
 /* Muster: nur innerhalb der Rumpfzone (b), damit Kopf und Beine sauber bleiben */
 function pattern(g, kind, c, seed = 1, b = null) {
   if (!kind || kind === 'none') return;
@@ -215,7 +226,8 @@ function P(main, o = {}) {
     '6': o.mouth || '#b33',
     '7': o.pat || dark(main, .55),
     '8': o.extra || lite(main, .6),
-    '9': '#f6f6f8'
+    '9': '#f6f6f8',
+    'o': o.line || dark(main, .78)
   };
 }
 
@@ -297,7 +309,7 @@ function quad(o = {}) {
   /* Gesicht */
   px(g, headX + hrx - 2, headY - .6, '4'); px(g, headX + hrx - 2, headY - 1.6, '4');
   if (o.mouth !== false) { px(g, headX + hrx + sn - 2, sy + 1.4, '6'); px(g, headX + hrx + sn - 1, sy + 1.4, '6'); }
-  return autoShade(g);
+  return outline(autoShade(g));
 }
 
 /* --- Vögel: Huhn, Gans, Krähe, Strauß, Kasuar, Adler, Pinguin --- */
@@ -335,7 +347,7 @@ function bird(o = {}) {
   pattern(g, o.pat, '7', o.seed ?? 5, { x0: bx - brx, x1: bx + brx, y0: by - bry, y1: by + bry });
   px(g, headX + hrx - 2, headY - .7, '4');
   if (o.brow) { px(g, headX + hrx - 3, headY - 1.9, '7'); px(g, headX + hrx - 2, headY - 1.9, '7'); px(g, headX + hrx - 1, headY - 1.6, '7'); }
-  return autoShade(g);
+  return outline(autoShade(g));
 }
 
 /* --- Schlangen --- */
@@ -350,7 +362,7 @@ function snake(o = {}) {
   lineTo(g, 17, 6.2, 21, 5.4, '6'); px(g, 21, 4.6, '6'); px(g, 21, 6.2, '6');
   pattern(g, o.pat || 'rings', '7', o.seed ?? 7, { x0: 3, x1: 17, y0: 10, y1: 21 });
   px(g, 15.4, 5.2, '4'); px(g, 13.6, 5.2, '4');
-  return autoShade(g);
+  return outline(autoShade(g));
 }
 
 /* --- Insekten: Biene, Ameise --- */
@@ -367,7 +379,7 @@ function insect(o = {}) {
   if (o.mand) { tri(g, 18.6, y - 1.6, 21.6, y - 2.6, 19, y, '5'); tri(g, 18.6, y + .4, 21.6, y + 1.8, 19, y - .6, '5'); }
   pattern(g, o.pat, '7', o.seed ?? 11, { x0: 3, x1: 11, y0: y - 3.4, y1: y + 3.4 });
   px(g, 17.4, y - 1.8, '4'); px(g, 17.4, y - .8, '4');
-  return autoShade(g);
+  return outline(autoShade(g));
 }
 
 /* --- Spinne --- */
@@ -384,7 +396,7 @@ function spider(o = {}) {
   pattern(g, o.pat, '7', 13, { x0: 4, x1: 13, y0: 9, y1: 17 });
   px(g, 15.4, cy - .6, '4'); px(g, 16.4, cy - .4, '4'); px(g, 15.4, cy + .8, '4'); px(g, 16.4, cy + .8, '4');
   if (o.hairy) for (let i = 0; i < 10; i++) { const a = Math.PI * 2 * i / 10; px(g, 8.4 + Math.cos(a) * 5.6, cy + .4 + Math.sin(a) * 5, '2'); }
-  return autoShade(g);
+  return outline(autoShade(g));
 }
 
 /* --- Skorpion --- */
@@ -399,7 +411,7 @@ function scorpion(o = {}) {
   for (let i = 0; i < 5; i++) { ell(g, tx, ty, 1.5, 1.4, '1'); tx -= .2 + i * .35; ty -= 2.1; }
   tri(g, tx - 1.6, ty + 1.4, tx + 2.6, ty - 1.6, tx + 1, ty + 2, '5');
   px(g, 18, cy - 1.4, '4'); px(g, 18, cy - .2, '4');
-  return autoShade(g);
+  return outline(autoShade(g));
 }
 
 /* --- Primaten: Gorilla, Schimpanse, Pavian --- */
@@ -420,7 +432,7 @@ function primate(o = {}) {
   if (o.snoutLong) { ell(g, hxp + 2.6, hy + 1.6, 2, 1.5, o.face || '5'); px(g, hxp + 4, hy + 1.2, '4'); }
   px(g, hxp - .4, hy - .2, '4'); px(g, hxp + 1.8, hy - .2, '4');
   px(g, hxp + .4, hy + 2.4, '6'); px(g, hxp + 1.4, hy + 2.4, '6');
-  return autoShade(g);
+  return outline(autoShade(g));
 }
 
 /* --- Känguru --- */
@@ -435,7 +447,7 @@ function kangaroo(o = {}) {
   ell(g, 16.4, 7, 1.8, 1.2, '1'); px(g, 17.8, 6.8, '5');
   ell(g, 12.6, 3.6, 1, 2.6, '1'); ell(g, 15.2, 3.4, 1, 2.6, '1');
   px(g, 15, 6.2, '4');
-  return autoShade(g);
+  return outline(autoShade(g));
 }
 
 /* --- Krokodil / Waran --- */
@@ -452,7 +464,7 @@ function croc(o = {}) {
   for (let i = 0; i < 6; i++) tri(g, 5 + i * 1.8, by - 2, 6 + i * 1.8, by - 4.2, 7 + i * 1.8, by - 2, '2');
   if (o.tongue) lineTo(g, 19, by + .2, 23, by + 1.6, '6');
   px(g, 17.4, by - 2.4, '4'); px(g, 16.2, by - 2.4, '4');
-  return autoShade(g);
+  return outline(autoShade(g));
 }
 
 /* --- Mensch: unsere Kämpfer ------------------------------------------
@@ -468,8 +480,18 @@ function human(o = {}) {
   const hip = sh + 5.6;
 
   /* Beine + Schuhe */
-  rect(g, cx - w + .2, hip, 2.8, GROUND_Y - hip, '6');
-  rect(g, cx + w - 3, hip, 2.8, GROUND_Y - hip, '6');
+  const legL = cx - w + .2, legR = cx + w - 3;
+  if (o.shorts) {
+    const shortLen = Math.max(2, (GROUND_Y - hip) * .5);
+    rect(g, legL, hip, 2.8, shortLen, '6');
+    rect(g, legR, hip, 2.8, shortLen, '6');
+    rect(g, legL + .3, hip + shortLen, 2.3, GROUND_Y - hip - shortLen, '3');
+    rect(g, legR + .3, hip + shortLen, 2.3, GROUND_Y - hip - shortLen, '3');
+    if (o.socks) { rect(g, legL + .3, GROUND_Y - 2, 2.3, 2, '9'); rect(g, legR + .3, GROUND_Y - 2, 2.3, 2, '9'); }
+  } else {
+    rect(g, legL, hip, 2.8, GROUND_Y - hip, '6');
+    rect(g, legR, hip, 2.8, GROUND_Y - hip, '6');
+  }
   rect(g, cx - w - .4, GROUND_Y, 3.8, 2, '7');
   rect(g, cx + w - 3.4, GROUND_Y, 3.8, 2, '7');
 
@@ -477,11 +499,17 @@ function human(o = {}) {
   rect(g, cx - w, sh, w * 2, hip - sh + 1, '1');
   rect(g, cx - w, hip - 1, w * 2, 1, '2');
 
-  /* Arme */
-  rect(g, cx - w - 2.2, sh, 2.2, 4.2, '1');
-  rect(g, cx + w, sh, 2.2, 4.2, '1');
+  /* Arme — bei kurzen Aermeln liegt der Unterarm frei */
+  const slv = o.shortSleeve ? 2 : 4.2;
+  rect(g, cx - w - 2.2, sh, 2.2, slv, '1');
+  rect(g, cx + w, sh, 2.2, slv, '1');
+  if (o.shortSleeve) {
+    rect(g, cx - w - 2, sh + slv, 1.9, 4.2 - slv, '3');
+    rect(g, cx + w + .1, sh + slv, 1.9, 4.2 - slv, '3');
+  }
   ell(g, cx - w - 1.1, sh + 4.8, 1.3, 1.3, '3');
   ell(g, cx + w + 1.1, sh + 4.8, 1.3, 1.3, '3');
+  if (o.watch) rect(g, cx + w + .1, sh + 3.8, 1.9, 1, '4');
 
   /* Hals + Kopf */
   rect(g, cx - 1, headY + 2.4, 2, 2.2, '3');
@@ -492,18 +520,18 @@ function human(o = {}) {
   if (hs !== 'bald') {
     if (hs === 'cap') { ell(g, cx, headY - 1.4, hr + .3, 2.1, '8'); rect(g, cx - .4, headY - .4, hr + 2.6, 1, '8'); }
     else {
-      ell(g, cx, headY - 1.5, hr + .2, 2.1, '5');
+      if (hs === 'buzz') ell(g, cx, headY - 1.9, hr - .1, 1.3, '5');
+      else ell(g, cx, headY - 1.5, hr + .2, 2.1, '5');
       if (hs === 'long') { rect(g, cx - hr - .4, headY - 1.4, 1.6, 6.4, '5'); rect(g, cx + hr - 1.2, headY - 1.4, 1.6, 6.4, '5'); }
       if (hs === 'bun') ell(g, cx - .4, headY - 4, 1.7, 1.5, '5');
       if (hs === 'curly') { for (let i = -3; i <= 3; i++) ell(g, cx + i * 1.1, headY - 2.4 - (i % 2 ? .8 : 0), 1.2, 1.1, '5'); }
       if (hs === 'mohawk') rect(g, cx - 1, headY - 5.4, 2.2, 3, '5');
-      if (hs === 'buzz') ell(g, cx, headY - 1.2, hr + .1, 1.5, '5');
       if (hs === 'wild') { for (let i = -3; i <= 3; i++) tri(g, cx + i * 1.1, headY - 2, cx + i * 1.3, headY - 5.2, cx + i * 1.1 + 1.2, headY - 2, '5'); }
     }
   }
   /* Bart */
   if (o.beard === 'full') { ell(g, cx, headY + 2.1, hr - .1, 1.9, '5'); rect(g, cx - 1.2, headY + 1.6, 2.6, 1, '3'); }
-  else if (o.beard === 'stubble') { for (let i = -2; i <= 2; i++) { px(g, cx + i, headY + 2.6, '5'); if (i % 2 === 0) px(g, cx + i, headY + 1.8, '5'); } }
+  else if (o.beard === 'stubble') { for (let i = -2; i <= 2; i++) { px(g, cx + i, headY + 2.5, '5'); px(g, cx + i, headY + 1.7, '5'); } px(g, cx - 2.8, headY + 1.4, '5'); px(g, cx + 2.8, headY + 1.4, '5'); }
   else if (o.beard === 'goatee') rect(g, cx - 1.2, headY + 2.2, 2.6, 1.8, '5');
   else if (o.beard === 'moustache') rect(g, cx - 1.4, headY + 1.4, 3, 1, '5');
 
@@ -515,8 +543,19 @@ function human(o = {}) {
     px(g, cx - 1.5, headY - .2, '4'); px(g, cx + 1.5, headY - .2, '4');
     rect(g, cx - .4, headY - .4, 1, 1, '4');
   }
+  if (o.shades) {   /* dunkle Sonnenbrille — verdeckt die Augen */
+    rect(g, cx - 2.5, headY - .5, 2, 1.6, 'b');
+    rect(g, cx + .6, headY - .5, 2, 1.6, 'b');
+    px(g, cx - .5, headY - .1, '4'); px(g, cx + .5, headY - .1, '4');
+  }
+  if (o.bag) {      /* Umhaengetasche quer ueber die Brust */
+    lineTo(g, cx + w - .6, sh - .4, cx - w + 1.4, sh + 4.4, 'a');
+    lineTo(g, cx + w - .6, sh - .2, cx - w + 1.4, sh + 4.6, 'a');
+    rect(g, cx - w - .4, sh + 4, 3.4, 3.4, 'a');
+    rect(g, cx - w - .2, sh + 5.2, 3, .9, '4');
+  }
   if (o.logo) rect(g, cx - 1.4, sh + 1.4, 3, 2, '9');
-  return autoShade(g, '1', '2');
+  return outline(autoShade(g, '1', '2'));
 }
 
 /* ============================================================
@@ -792,41 +831,106 @@ const ANIMALS = [
 const PH = o => ({
   '1': o.shirt, '2': dark(o.shirt, .3), '3': o.skin, '4': '#191a22',
   '5': o.hair, '6': o.pants || '#3b4a6e', '7': o.shoe || '#25252d',
-  '8': o.acc || '#d8342a', '9': '#f6f6f8'
+  '8': o.acc || '#d8342a', '9': o.socks || '#f6f6f8',
+  'a': o.bagCol || '#23232b', 'b': o.lens || '#2b2f3a', 'o': o.line || '#151520'
 });
-const F = (id, name, tag, hp, atk, df, spd, special, look) => ({
-  id, name, tag, hp, atk, def: df, spd, special, human: true,
-  pal: PH(look), build: () => human(look)
-});
+/* ---------- ROLLEN ----------------------------------------------------
+   Jede Rolle ist ein Statprofil PLUS eine echte Mechanik (passive).
+   Wer welche Rolle bekommt, entscheidet das Interview.               */
+const ROLES = {
+  fels: {
+    name: 'Der Fels', kurz: 'Tank', passive: 'zaeh',
+    hp: 265, atk: 17, def: 25, spd: 9,
+    was: 'Viel HP, dicke Deckung, nimmt 18% weniger Schaden. Teilt wenig aus, geht dafür kaum um.',
+    special: { n: 'Breitbeiniger Stand', c: .18, m: 1.9, t: '$A steht einfach da. $B prallt ab.' }
+  },
+  blitz: {
+    name: 'Der Blitz', kurz: 'Speedster', passive: 'flink',
+    hp: 170, atk: 19, def: 13, spd: 21,
+    was: 'Doppelte Schlagzahl, 14% Ausweichchance. Aus Papier gebaut.',
+    special: { n: 'Dreifach-Kombo', c: .22, m: 1.8, t: '$A haut dreimal zu, bevor $B blinzeln kann.' }
+  },
+  faust: {
+    name: 'Die Faust', kurz: 'Bruiser', passive: 'brecher',
+    hp: 200, atk: 27, def: 15, spd: 12,
+    was: 'Höchster Grundschaden, kritische Treffer hauen 40% härter rein.',
+    special: { n: 'Sonntagsschlag', c: .2, m: 2.6, t: '$A holt weit aus. $B sieht Sterne.' }
+  },
+  taktiker: {
+    name: 'Der Taktiker', kurz: 'Krit-Jäger', passive: 'taktiker',
+    hp: 190, atk: 19, def: 19, spd: 14,
+    was: 'Findet Schwachstellen: 26% Kritchance statt 10%. Unauffällig, aber nervig effektiv.',
+    special: { n: 'Schwachstellen-Analyse', c: .22, m: 2.1, t: '$A hat $Bs Schwachstelle gefunden.' }
+  },
+  wand: {
+    name: 'Die Wand', kurz: 'Blocker', passive: 'wand',
+    hp: 245, atk: 15, def: 27, spd: 9,
+    was: '22% Chance, einen Angriff komplett zu blocken. Gewinnt durch Aussitzen.',
+    special: { n: 'Blocken', c: .24, m: 1.5, t: '$A blockt alles ab und grinst dabei.' }
+  },
+  chaos: {
+    name: 'Das Chaos', kurz: 'Glücksritter', passive: 'chaos',
+    hp: 185, atk: 23, def: 15, spd: 15,
+    was: 'Schaden schwankt zwischen lächerlich und verheerend. Doppelte Glücks- UND Pechchance.',
+    special: { n: 'Völlig planlos', c: .26, m: 2.2, t: '$A macht irgendwas. Es funktioniert.' }
+  },
+  onepunch: {
+    name: 'Der Ruhige', kurz: 'One-Punch', passive: 'onepunch',
+    hp: 210, atk: 22, def: 19, spd: 13,
+    was: 'Schlägt halb so oft, dafür mit 2,6-fachem Schaden. Alles oder nichts.',
+    special: { n: 'Ein Schlag genügt', c: .16, m: 3, t: '$A schlägt exakt einmal. Es reicht.' }
+  },
+  sweeper: {
+    name: 'Der Tritt-König', kurz: 'Anti-Schwarm', passive: 'sweeper',
+    hp: 205, atk: 20, def: 18, spd: 13,
+    was: 'Rundumtritt trifft einen Gegner mehr und reicht 60% weiter. Der Chihuahua-Schreck.',
+    special: { n: 'Rundumtritt', c: .2, m: 2, t: '$A dreht sich einmal. Drei Gegner fliegen.' }
+  },
+  support: {
+    name: 'Der Schreihals', kurz: 'Support', passive: 'support',
+    hp: 200, atk: 16, def: 18, spd: 13,
+    was: 'Gibt allen Teamkollegen in der Nähe +14% Schaden. Allein ziemlich nutzlos.',
+    special: { n: 'Anfeuern', c: .22, m: 1.7, t: '$A brüllt etwas Motivierendes. Es hilft tatsächlich.' }
+  },
+  comeback: {
+    name: 'Der Überlebende', kurz: 'Comeback', passive: 'comeback',
+    hp: 215, atk: 18, def: 17, spd: 13,
+    was: 'Je weniger HP übrig, desto härter die Schläge — bis zu +90% bei fast leerer Leiste.',
+    special: { n: 'Letztes Aufbäumen', c: .2, m: 2.3, t: '$A hat nichts mehr zu verlieren.' }
+  }
+};
+
+const F = (id, name, roleKey, look) => {
+  const r = ROLES[roleKey];
+  return {
+    id, name, role: roleKey, tag: r.name, kurz: r.kurz, was: r.was, passive: r.passive,
+    hp: r.hp, atk: r.atk, def: r.def, spd: r.spd, special: r.special, human: true,
+    pal: PH(look), build: () => human(look)
+  };
+};
 
 const FIGHTERS = [
-  F('p1', 'Kämpfer 1', 'Der Fels', 260, 18, 24, 10,
-    { n: 'Breitbeiniger Stand', c: .18, m: 1.9, t: '$A steht einfach da. $B prallt ab.' },
-    { skin: '#e8b48c', hair: '#3a2a1e', hairStyle: 'buzz', beard: 'full', shirt: '#3a6ed0', pants: '#22304e', build: 'big' }),
-  F('p2', 'Kämpfer 2', 'Der Blitz', 175, 19, 14, 20,
-    { n: 'Dreifach-Kombo', c: .22, m: 1.8, t: '$A haut dreimal zu, bevor $B blinzeln kann.' },
-    { skin: '#f0c9a0', hair: '#c8902a', hairStyle: 'short', shirt: '#e0b528', pants: '#2b3350', build: 'slim' }),
-  F('p3', 'Kämpfer 3', 'Die Faust', 195, 26, 15, 12,
-    { n: 'Sonntagsschlag', c: .2, m: 2.6, t: '$A holt weit aus. $B sieht Sterne.' },
-    { skin: '#c98a5e', hair: '#201a16', hairStyle: 'curly', beard: 'stubble', shirt: '#d03a3a', pants: '#2a2a3a' }),
-  F('p4', 'Kämpfer 4', 'Der Denker', 190, 17, 20, 13,
-    { n: 'Taktische Analyse', c: .22, m: 2.1, t: '$A hat $Bs Schwachstelle gefunden.' },
-    { skin: '#f2d0b0', hair: '#5a4030', hairStyle: 'short', glasses: 1, shirt: '#37a860', pants: '#2c3550' }),
-  F('p5', 'Kämpfer 5', 'Die Wand', 240, 16, 26, 9,
-    { n: 'Blocken', c: .24, m: 1.5, t: '$A blockt alles ab und grinst dabei.' },
-    { skin: '#e0a878', hair: '#1c1c22', hairStyle: 'bald', beard: 'goatee', shirt: '#8b46c8', pants: '#242c44', build: 'big' }),
-  F('p6', 'Kämpfer 6', 'Das Chaos', 185, 22, 16, 15,
-    { n: 'Völlig planlos', c: .26, m: 2.2, t: '$A macht irgendwas. Es funktioniert.' },
-    { skin: '#f0bc94', hair: '#d84a2a', hairStyle: 'wild', shirt: '#20b4c8', pants: '#2a3450' }),
-  F('p7', 'Kämpfer 7', 'Der Ruhige', 210, 20, 19, 14,
-    { n: 'Ein Schlag genügt', c: .16, m: 3, t: '$A schlägt exakt einmal. Es reicht.' },
-    { skin: '#a86a44', hair: '#181820', hairStyle: 'bun', beard: 'moustache', shirt: '#f0f0f2', pants: '#1e2436' })
+  /* ---- echte Kämpfer ---- */
+  F('tizi', 'Tizi', 'chaos', {
+    skin: '#f0c49a', hair: '#a8905e', hairStyle: 'buzz', beard: 'stubble',
+    shades: 1, shortSleeve: 1, shorts: 1, socks: '#f4f4f6', watch: 1, bag: 1,
+    shirt: '#f4f4f6', pants: '#d4bd92', shoe: '#e4e4e8', lens: '#24262f', bagCol: '#1b1b24'
+  }),
+
+  /* ---- Platzhalter, bis die restlichen Fotos da sind ---- */
+  F('p2', 'Kämpfer 2', 'blitz', { skin: '#f0c9a0', hair: '#c8902a', hairStyle: 'short', shortSleeve: 1, shirt: '#e0b528', pants: '#2b3350', build: 'slim' }),
+  F('p3', 'Kämpfer 3', 'faust', { skin: '#c98a5e', hair: '#201a16', hairStyle: 'curly', beard: 'stubble', shirt: '#d03a3a', pants: '#2a2a3a' }),
+  F('p4', 'Kämpfer 4', 'taktiker', { skin: '#f2d0b0', hair: '#5a4030', hairStyle: 'short', glasses: 1, shirt: '#37a860', pants: '#2c3550' }),
+  F('p5', 'Kämpfer 5', 'wand', { skin: '#e0a878', hair: '#1c1c22', hairStyle: 'bald', beard: 'goatee', shirt: '#8b46c8', pants: '#242c44', build: 'big' }),
+  F('p6', 'Kämpfer 6', 'fels', { skin: '#e8b48c', hair: '#3a2a1e', hairStyle: 'buzz', beard: 'full', shirt: '#3a6ed0', pants: '#22304e', build: 'big' }),
+  F('p7', 'Kämpfer 7', 'onepunch', { skin: '#a86a44', hair: '#181820', hairStyle: 'bun', beard: 'moustache', shortSleeve: 1, shirt: '#f0f0f2', pants: '#1e2436' })
 ];
 
 /* ============================================================
    6) KAMPF-MATHEMATIK
    ============================================================ */
 const TUNE = { mitig: 22, cleaveChain: 3, baseRate: 0.048 };
+const LUCK = { miss: .07, lucky: .06, luckyMult: 2.5 };  /* ein bisschen Glueck muss sein */
 const SWEEP_RATIO = .62;   /* ab wann gilt ein Gegner als "deutlich kleiner" */
 
 function animalStats(a) {
@@ -860,7 +964,7 @@ function makeUnit(def, side, srcKg) {
   const s = statsOf(def);
   return {
     uid: ++_uid, name: def.name, side, def, src: def, human: !!def.human,
-    size: sizeOf(def), vis: visOf(def),
+    size: sizeOf(def), vis: visOf(def), passive: def.passive || null,
     maxHp: s.hp, hp: s.hp, atk: s.atk, dfn: s.def, spd: s.spd,
     x: 0, y: 0, tx: 0, ty: 0, target: null, cd: Math.random() * .6,
     alive: true, flash: 0, bob: Math.random() * 6.28, lunge: 0, kills: 0, dealt: 0
@@ -929,31 +1033,80 @@ function applyDamage(w, atk, tgt, raw, tag) {
   }
 }
 
+/* Verteidiger-Passive: wie viel Schaden kommt bei DIESEM Ziel an? */
+const defMod = o => o.passive === 'zaeh' ? .82 : 1;
+
+/* Der Schreihals buffed Verbündete in der Nähe */
+function supportAura(w, u) {
+  let m = 1;
+  for (const o of w.units)
+    if (o.alive && o !== u && o.side === u.side && o.passive === 'support' &&
+        Math.hypot(o.x - u.x, (o.y - u.y) * .4) < .2) m += .14;
+  return m;
+}
+
 function doAttack(w, u) {
   const t = u.target; if (!t || !t.alive) return;
   u.lunge = .22;
+  const pas = u.passive;
+  const luckMul = pas === 'chaos' ? 2 : 1;   /* Chaos hat mehr Glück UND mehr Pech */
+
+  /* Pech: voll danebengehauen */
+  if (Math.random() < LUCK.miss * luckMul) {
+    w.fx.push({ k: 'txt', x: u.x, y: u.y, s: 'DANEBEN', col: '#8fa3c8', life: .7 });
+    if (Math.random() < .25) w.log.push({ c: '', s: `${u.name} haut komplett daneben.` });
+    return;
+  }
+  /* Der Blitz weicht aus */
+  if (t.passive === 'flink' && Math.random() < .14) {
+    w.fx.push({ k: 'txt', x: t.x, y: t.y, s: 'AUSGEWICHEN', col: '#3cbcfc', life: .7 });
+    if (Math.random() < .3) w.log.push({ c: 'spc', s: `${t.name} weicht ${u.name} aus.` });
+    return;
+  }
+  /* Die Wand blockt */
+  let blockMul = 1;
+  if (t.passive === 'wand' && Math.random() < .22) {
+    blockMul = .12;
+    w.fx.push({ k: 'txt', x: t.x, y: t.y, s: 'BLOCK', col: '#fcd000', life: .7 });
+  }
+
   const sp = u.def.special;
   const isSpecial = sp && Math.random() < sp.c;
-  const crit = !isSpecial && Math.random() < .1;
-  let raw = mitigate(u.atk, t.dfn) * (.85 + Math.random() * .3);
-  if (isSpecial) raw *= sp.m; else if (crit) raw *= 1.8;
-  applyDamage(w, u, t, raw, isSpecial ? 'special' : crit ? 'crit' : 'hit');
+  const critChance = pas === 'taktiker' ? .26 : .1;
+  const crit = !isSpecial && Math.random() < critChance;
+  const lucky = !isSpecial && !crit && Math.random() < LUCK.lucky * luckMul;
+
+  let atkVal = u.atk * supportAura(w, u);
+  if (pas === 'comeback') atkVal *= 1 + (1 - u.hp / u.maxHp) * .9;
+  if (pas === 'onepunch') atkVal *= 2.6;
+
+  const spread = pas === 'chaos' ? (.4 + Math.random() * 1.5) : (.85 + Math.random() * .3);
+  let raw = mitigate(atkVal, t.dfn) * spread * blockMul;
+  if (isSpecial) raw *= sp.m;
+  else if (crit) raw *= pas === 'brecher' ? 2.5 : 1.8;
+  else if (lucky) raw *= LUCK.luckyMult;
+
+  applyDamage(w, u, t, raw * defMod(t), isSpecial ? 'special' : (crit || lucky) ? 'crit' : 'hit');
+
   /* Rundumschlag: trifft nur GEGNER, die deutlich kleiner sind als der Angreifer.
      Ein Mensch tritt drei Chihuahuas weg — aber keine drei Wölfe.
      Umgekehrt erwischt ein Elefant mit dem Rüssel mehrere Menschen. */
   const sweepMax = SWEEP_RATIO * u.size;
   if (t.size < sweepMax) {
     const tiny = t.size < .35 * u.size;
-    const many = tiny ? 3 : 2, mult = tiny ? 1 : .6;
+    const bonus = pas === 'sweeper' ? 1 : 0, reach = pas === 'sweeper' ? 1.6 : 1;
+    const many = (tiny ? 3 : 2) + bonus, mult = tiny ? 1 : .6;
     enemiesOf(w, u)
       .filter(o => o !== t && o.size < sweepMax &&
-        Math.hypot(o.x - u.x, (o.y - u.y) * .35) < .05 + (u.size + o.size) * .009)
+        Math.hypot(o.x - u.x, (o.y - u.y) * .35) < (.05 + (u.size + o.size) * .009) * reach)
       .slice(0, many)
-      .forEach(o => applyDamage(w, u, o, raw * mult, 'sweep'));
+      .forEach(o => applyDamage(w, u, o, raw * mult * defMod(o), 'sweep'));
   }
+
   if (isSpecial) w.log.push({ c: 'spc', s: `★ ${sp.n}: ` + sp.t.replace(/\$A/g, u.name).replace(/\$B/g, t.name) });
+  else if (lucky) w.log.push({ c: 'hit', s: `Glückstreffer! ${u.name} erwischt ${t.name} genau richtig.` });
   else if (crit) w.log.push({ c: 'hit', s: `${u.name} landet einen KRITISCHEN Treffer auf ${t.name}!` });
-  else if (Math.random() < .12) w.log.push({ c: '', s: `${u.name} trifft ${t.name}.` });
+  else if (Math.random() < .1) w.log.push({ c: '', s: `${u.name} trifft ${t.name}.` });
 }
 
 function step(w, dt) {
@@ -995,7 +1148,7 @@ function step(w, dt) {
       if (fits) {
         u.waiting = false;
         u.cd -= dt;
-        if (u.cd <= 0) { doAttack(w, u); u.cd = Math.max(.3, 1 / (TUNE.baseRate * u.spd + .26)); }
+        if (u.cd <= 0) { doAttack(w, u); u.cd = Math.max(.3, 1 / (TUNE.baseRate * u.spd + .26)) * (u.passive === 'onepunch' ? 2 : 1); }
       } else {
         /* kein Platz: auf den Aussenring zurueckweichen und dort herumtigern */
         u.waiting = true;
@@ -1103,7 +1256,7 @@ app.innerHTML = `
   <div class="row" style="justify-content:center;margin-top:10px">
     <button class="primary" id="btn-start">▶ PRESS START</button>
   </div>
-  <div class="sub blink" style="margin-top:8px">7 Kämpfer · 50 Gegner · 0 Verantwortung</div>
+  <div class="sub blink" style="margin-top:8px">7 Kämpfer · 10 Rollen · 50 Gegner · 0 Verantwortung</div>
 </div>
 
 <div class="screen" id="scr-select">
@@ -1113,6 +1266,13 @@ app.innerHTML = `
       <div style="font-size:9px;color:var(--nes-dim)" id="sel-count">0 ausgewählt</div>
     </div>
     <div class="grid-fighters" id="fighter-grid" style="margin-top:12px"></div>
+  </div>
+  <div class="panel dark">
+    <div class="row spread" style="cursor:pointer" id="roles-toggle">
+      <div style="font-size:10px">ROLLEN-ÜBERSICHT</div>
+      <div style="font-size:9px;color:var(--nes-dim)" id="roles-arrow">▼ aufklappen</div>
+    </div>
+    <div id="roles-body" style="display:none;margin-top:12px"></div>
   </div>
   <div class="row spread">
     <button class="ghost" id="btn-back-title">← Zurück</button>
@@ -1193,8 +1353,10 @@ function buildFighterGrid() {
   FIGHTERS.forEach(f => {
     const d = document.createElement('div'); d.className = 'card'; d.dataset.id = f.id;
     const s = statsOf(f);
+    d.title = f.was;
     d.innerHTML = `<div class="chk">✔</div><div class="nm">${f.name}</div>
-      <div class="tag">${f.tag}</div>
+      <div class="tag" style="color:var(--nes-yellow)">${f.tag}</div>
+      <div class="tag">${f.kurz}</div>
       <div class="tag">HP ${s.hp} · ATK ${s.atk}<br>DEF ${s.def} · SPD ${s.spd}</div>`;
     d.insertBefore(thumb(f, 3), d.children[1]);
     d.onclick = () => {
@@ -1302,6 +1464,13 @@ function drawFx() {
       ctx.globalAlpha = Math.min(1, f.life * 2.6);
       ctx.fillStyle = '#000'; ctx.fillText(f.v, x + 1, y - 26 - up + 1);
       ctx.fillStyle = f.crit ? '#fcd000' : '#fff'; ctx.fillText(f.v, x, y - 26 - up);
+      ctx.globalAlpha = 1;
+    } else if (f.k === 'txt') {
+      const up = (1 - f.life / .7) * 20;
+      ctx.font = '8px "Press Start 2P", monospace';
+      ctx.globalAlpha = Math.min(1, f.life * 3);
+      ctx.fillStyle = '#000'; ctx.fillText(f.s, x + 1, y - 30 - up + 1);
+      ctx.fillStyle = f.col || '#fff'; ctx.fillText(f.s, x, y - 30 - up);
       ctx.globalAlpha = 1;
     } else if (f.k === 'poof') {
       const r = (1 - f.life / .5) * 16;
@@ -1436,6 +1605,28 @@ $('#enemy-search').oninput = renderEnemyList;
 $('#enemy-group').onchange = renderEnemyList;
 $('#btn-speed').onclick = e => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; e.target.textContent = '▶▶ ' + speed + 'x'; };
 
+function buildRoleList() {
+  $('#roles-body').innerHTML = Object.entries(ROLES).map(([k, r]) => `
+    <div style="display:flex;gap:10px;padding:8px 0;border-bottom:2px solid #2a3450">
+      <div style="min-width:118px">
+        <div style="font-size:9px;color:var(--nes-yellow);line-height:1.6">${r.name}</div>
+        <div style="font-size:7px;color:var(--nes-dim);line-height:1.6">${r.kurz}</div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:8px;line-height:1.9;color:var(--nes-ink)">${r.was}</div>
+        <div style="font-size:7px;color:var(--nes-dim);line-height:1.8;margin-top:4px">
+          HP ${r.hp} · ATK ${r.atk} · DEF ${r.def} · SPD ${r.spd} &nbsp;|&nbsp; ★ ${r.special.n}
+        </div>
+      </div>
+    </div>`).join('');
+}
+$('#roles-toggle').onclick = () => {
+  const b = $('#roles-body'), open = b.style.display === 'none';
+  b.style.display = open ? 'block' : 'none';
+  $('#roles-arrow').textContent = open ? '▲ zuklappen' : '▼ aufklappen';
+};
+
+buildRoleList();
 buildFighterGrid();
 buildEnemyList();
 updateEnemyHeader();

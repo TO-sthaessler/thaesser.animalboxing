@@ -10,7 +10,8 @@ Dependencies. Doppelklick genügt, oder über GitHub Pages hosten.
 
 | | |
 |---|---|
-| **7 Kämpfer** | aktuell Platzhalter, werden gegen die echten Fotos getauscht |
+| **7 Kämpfer** | Tizi steht, der Rest ist Platzhalter bis die Fotos da sind |
+| **10 Rollen** | Statprofil + echte Mechanik, frei zuweisbar |
 | **50 Gegner** | mit halbwegs echten Werten (Gewicht, Beisskraft, Tempo, Aggression) |
 | **4 Arenen** | Wiese, Dojo, Strand, Parkhaus |
 | **Auto-Battle** | Intro-Animation, HP-Balken, Schadenszahlen, Kampflog, Ergebnis-Screen |
@@ -33,22 +34,58 @@ A('wolf', 'Wolf', 'Hunde', 45, 400, 60, 8, 1,
 Vorhandene Baupläne: `quad` (Vierbeiner), `bird`, `snake`, `insect`, `spider`,
 `scorpion`, `primate`, `kangaroo`, `croc`, `human`.
 
+## Die 10 Rollen
+
+Jede Rolle ist nicht nur ein Statprofil, sondern eine echte Mechanik im Kampf.
+
+| Rolle | Kurz | Mechanik |
+|---|---|---|
+| Der Fels | Tank | nimmt 18 % weniger Schaden |
+| Der Blitz | Speedster | doppelte Schlagzahl, 14 % Ausweichchance |
+| Die Faust | Bruiser | höchster Grundschaden, Krits +40 % |
+| Der Taktiker | Krit-Jäger | 26 % Kritchance statt 10 % |
+| Die Wand | Blocker | 22 % Chance auf Komplettblock |
+| Das Chaos | Glücksritter | Schadensstreuung 40–190 %, doppeltes Glück und Pech |
+| Der Ruhige | One-Punch | halbe Schlagzahl, 2,6-facher Schaden |
+| Der Tritt-König | Anti-Schwarm | Rundumtritt trifft einen mehr, 60 % mehr Reichweite |
+| Der Schreihals | Support | +14 % Schaden für Verbündete in der Nähe |
+| Der Überlebende | Comeback | bis +90 % Schaden bei fast leerer HP-Leiste |
+
+Rollen stehen in `ROLES`, Zuweisung passiert in `FIGHTERS` über den dritten Parameter.
+
+## Glück
+
+Weil ein bisschen Glück dazugehören muss:
+
+* **7 % Fehlschlag** — komplett danebengehauen
+* **6 % Glückstreffer** — 2,5-facher Schaden, unabhängig vom kritischen Treffer
+* **Das Chaos** hat beide Werte verdoppelt und zusätzlich eine wilde
+  Schadensstreuung
+
+Einstellbar über `LUCK`.
+
 ## Die echten Kämpfer eintragen
 
 In `index.html` den Block `FIGHTERS` anpassen. Nur das letzte Objekt (`look`)
 bestimmt das Aussehen:
 
 ```js
-F('p1', 'Ole', 'Der Fels', 260, 18, 24, 10,
-  { n: 'Breitbeiniger Stand', c: .18, m: 1.9, t: '$A steht einfach da. $B prallt ab.' },
-  { skin: '#e8b48c', hair: '#3a2a1e', hairStyle: 'buzz', beard: 'full',
-    shirt: '#3a6ed0', pants: '#22304e', build: 'big' })
+F('tizi', 'Tizi', 'chaos', {
+  skin: '#f0c49a', hair: '#a8905e', hairStyle: 'buzz', beard: 'stubble',
+  shades: 1, shortSleeve: 1, shorts: 1, socks: '#f4f4f6', watch: 1, bag: 1,
+  shirt: '#f4f4f6', pants: '#d4bd92', shoe: '#e4e4e8'
+})
 ```
+
+Signatur: `F(id, Name, Rolle, Aussehen)`. Verfügbare Aussehen-Optionen:
 
 * `hairStyle`: `short` `buzz` `long` `bun` `curly` `wild` `mohawk` `bald` `cap`
 * `beard`: `full` `stubble` `goatee` `moustache` (oder weglassen)
-* `glasses: 1`, `logo: 1`, `build`: `slim` | `normal` | `big`, `tall: 1`
-* Die Zahlen sind HP / ATK / DEF / SPD.
+* Flags: `shades` (Sonnenbrille), `glasses` (normale Brille), `shorts`,
+  `shortSleeve` (T-Shirt statt Langarm), `socks`, `bag` (Umhängetasche),
+  `watch`, `logo`, `tall`
+* Farben: `skin` `hair` `shirt` `pants` `shoe` `lens` `bagCol` `line`
+* `build`: `slim` | `normal` | `big`
 
 ## Kampfmathematik
 
