@@ -299,12 +299,15 @@ Das Sharesheet braucht einen sicheren Kontext (HTTPS oder localhost).
 Per Doppelklick aus dem Dateisystem geöffnet greift automatisch der
 Fallback.
 
-Im Bericht stehen: Aufstellung beider Seiten mit Sprites, Ergebnis und
-Dauer, Überlebende mit Rest-HP, Gefallene, erledigte Gegner nach Art,
-Meister Schaden, meiste K.O.s, meiste Prügel eingesteckt, härtester
-Treffer mit Urheber, sowie Angriffe, Gesamtschaden, Schaden pro Sekunde,
-ausgelöste Specials, Krits, Glückstreffer, Fehlschläge, Ausweichmanöver
-und Blocks.
+Im Bericht steht die **vollständige Aufstellung beider Seiten** — jeder
+Kämpfer namentlich mit Gegenstand und Rest-HP beziehungsweise K.O., und
+jede Gegnerart mit Anzahl und wie viele davon erledigt wurden. Nichts
+wird abgeschnitten; die Bildhöhe wächst mit der Liste.
+
+Dazu Ergebnis und Dauer, Meister Schaden, meiste K.O.s, meiste Prügel
+eingesteckt, härtester Treffer mit Urheber, sowie Angriffe,
+Gesamtschaden, Schaden pro Sekunde, ausgelöste Specials, Krits,
+Glückstreffer, Fehlschläge, Ausweichmanöver und Blocks.
 
 ## Balancing selbst testen
 

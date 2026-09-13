@@ -78,7 +78,11 @@ button.on,button.ghost.on{background:var(--nes-yellow);color:#06101e;border-colo
 .erow .es{font-size:7px;color:var(--nes-dim);line-height:1.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stepper{display:flex;align-items:center;gap:4px}
 .stepper button{padding:4px 7px;font-size:9px;box-shadow:0 0 0 2px #000}
-.stepper .cnt{font-size:9px;min-width:22px;text-align:center;color:var(--nes-yellow)}
+.stepper input.cnt{font-family:inherit;font-size:9px;width:42px;text-align:center;
+  color:var(--nes-yellow);background:#0b1120;border:2px solid #3a4870;padding:5px 2px;
+  -moz-appearance:textfield}
+.stepper input.cnt::-webkit-outer-spin-button,
+.stepper input.cnt::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
 .arena-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
 .atile{border:3px solid #3a4870;background:var(--nes-panel2);padding:4px;cursor:pointer;
@@ -2104,17 +2108,28 @@ function renderEnemyList() {
         <div class="es">${a.kg < 1 ? (a.kg * 1000).toFixed(0) + ' g' : a.kg + ' kg'} · ${a.kmh} km/h</div>
         <div class="es">HP ${s.hp} ATK ${s.atk} DEF ${s.def}</div>
       </div>
-      <div class="stepper"><button data-d="-1">−</button><span class="cnt">${n}</span><button data-d="1">+</button></div>`;
+      <div class="stepper">
+        <button data-d="-1">−</button>
+        <input class="cnt" type="number" inputmode="numeric" min="0" max="${MAX_ENEMIES}" value="${n}">
+        <button data-d="1">+</button>
+      </div>`;
     row.insertBefore(thumb(a, 2), row.firstChild);
-    row.querySelectorAll('button').forEach(b => b.onclick = () => {
-      const d = +b.dataset.d, cur = enemyCount.get(a.id) || 0;
-      let nv = Math.max(0, cur + d);
-      if (d > 0 && totalEnemies() >= MAX_ENEMIES) nv = cur;
+    const field = row.querySelector('.cnt');
+    /* Setzt den Wert und deckelt ihn am Gesamtbudget */
+    const setCount = want => {
+      const cur = enemyCount.get(a.id) || 0;
+      const frei = MAX_ENEMIES - (totalEnemies() - cur);
+      const nv = Math.max(0, Math.min(Math.round(want) || 0, frei));
       nv ? enemyCount.set(a.id, nv) : enemyCount.delete(a.id);
-      row.querySelector('.cnt').textContent = nv;
+      field.value = nv;
       row.classList.toggle('act', !!nv);
       updateEnemyHeader();
-    });
+      return nv;
+    };
+    row.querySelectorAll('button').forEach(b => b.onclick = () => setCount((enemyCount.get(a.id) || 0) + (+b.dataset.d)));
+    field.onclick = e => e.stopPropagation();
+    field.oninput = () => { if (field.value !== '') setCount(+field.value); };
+    field.onblur = () => setCount(+field.value);
     list.appendChild(row);
   });
 }
@@ -2386,12 +2401,25 @@ function buildReport(w) {
   const byKill = [...w.units].sort((a, b) => b.kills - a.kills);
   const tank = [...team].sort((a, b) => (b.taken || 0) - (a.taken || 0))[0];
 
-  /* Gegner nach Art zusammenfassen */
+  /* Gegner nach Art zusammenfassen — jede Art wird im Bericht genannt */
   const kinds = new Map();
   foes.forEach(u => {
-    const e = kinds.get(u.name) || { n: 0, down: 0 };
+    const e = kinds.get(u.name) || { n: 0, down: 0, def: u.def };
     e.n++; if (!u.alive) e.down++; kinds.set(u.name, e);
   });
+
+  /* Eine Zeile pro Kämpfer und pro Gegnerart — vollständig, nichts gekürzt */
+  const teamLines = team.map(u => ({
+    name: u.name,
+    detail: (u.item && u.item.id !== 'none' ? u.item.name + ' · ' : '') +
+            (u.alive ? Math.round(u.hp) + '/' + u.maxHp + ' HP' : 'K.O.'),
+    alive: u.alive
+  }));
+  const foeLines = [...kinds].map(([n, e]) => ({
+    name: e.n + '× ' + n,
+    detail: e.down + ' von ' + e.n + ' erledigt',
+    alive: e.down < e.n
+  }));
 
   return {
     datum: new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }),
@@ -2401,10 +2429,8 @@ function buildReport(w) {
     dauer: w.t.toFixed(1),
     teamAlive: aliveA.length, teamTotal: team.length,
     foeAlive: aliveB.length, foeTotal: foes.length,
-    ueberlebende: aliveA.map(u => `${u.name} (${Math.round(u.hp)}/${u.maxHp} HP)`),
-    gefallen: team.filter(u => !u.alive).map(u => u.name),
-    kinds: [...kinds].map(([n, e]) => `${e.down}/${e.n} ${n}`),
-    ausruestung: team.filter(u => u.item && u.item.id !== 'none').map(u => `${u.name}: ${u.item.name}`),
+    teamLines, foeLines,
+    kindDefs: [...kinds].map(([, e]) => e.def),
     mvp: byDmg[0], topKill: byKill[0], tank,
     hits: st.hits, kos: st.kos, dmg: Math.round(st.dmg), specials: st.specials, crit: st.crit,
     lucky: st.lucky, miss: st.miss, dodge: st.dodge, block: st.block, best: st.best,
@@ -2418,19 +2444,15 @@ function reportText(r) {
   L.push('ANIMAL BOXING — ABSCHLUSSBERICHT');
   L.push(`${r.datum} · Arena: ${r.arena}`);
   L.push('');
-  L.push(`${r.teamLabel}`);
-  L.push(`  gegen  ${r.foeLabel}`);
-  L.push('');
   L.push(r.unentschieden ? 'ERGEBNIS: UNENTSCHIEDEN'
     : r.sieg ? `ERGEBNIS: TEAM GEWINNT nach ${r.dauer}s`
              : `ERGEBNIS: TEAM VERLIERT nach ${r.dauer}s`);
   L.push('');
-  L.push(`Team übrig:    ${r.teamAlive}/${r.teamTotal}`);
-  if (r.ueberlebende.length) L.push('  ' + r.ueberlebende.join(', '));
-  if (r.gefallen.length) L.push('  Gefallen: ' + r.gefallen.join(', '));
-  L.push(`Gegner erledigt: ${r.foeTotal - r.foeAlive}/${r.foeTotal}`);
-  r.kinds.forEach(k => L.push('  ' + k + ' erledigt'));
-  if (r.ausruestung.length) { L.push(''); L.push('Ausrüstung:'); r.ausruestung.forEach(a => L.push('  ' + a)); }
+  L.push(`TEAM (${r.teamAlive}/${r.teamTotal} übrig)`);
+  r.teamLines.forEach(t => L.push(`  ${t.name} — ${t.detail}`));
+  L.push('');
+  L.push(`GEGNER (${r.foeTotal - r.foeAlive}/${r.foeTotal} erledigt)`);
+  r.foeLines.forEach(t => L.push(`  ${t.name} — ${t.detail}`));
   L.push('');
   L.push(`Meister Schaden:  ${r.mvp.name} (${Math.round(r.mvp.dealt)})`);
   L.push(`Meiste K.O.s:     ${r.topKill.name} (${r.topKill.kills})`);
@@ -2446,11 +2468,9 @@ function reportText(r) {
 }
 
 function reportCanvas(r) {
-  const W2 = 520, pad = 18;
-  const rows = [
+  const W2 = 560, pad = 18, LH = 15;
+  const stats = [
     ['Dauer', r.dauer + 's'],
-    ['Team übrig', `${r.teamAlive}/${r.teamTotal}`],
-    ['Gegner erledigt', `${r.foeTotal - r.foeAlive}/${r.foeTotal}`],
     ['Angriffe gelandet', String(r.hits)],
     ['K.O.s (beide Seiten)', String(r.kos)],
     ['Schaden gesamt', `${r.dmg}  (${r.dps}/s)`],
@@ -2458,68 +2478,84 @@ function reportCanvas(r) {
     ['Krits / Glück', `${r.crit} / ${r.lucky}`],
     ['Daneben / Block', `${r.miss} / ${r.block}`]
   ];
-  const H2 = 226 + rows.length * 17 + 82 + (r.ausruestung.length ? Math.min(4, r.ausruestung.length) * 15 + 8 : 0);
+  const bestRows = [
+    ['MEISTER SCHADEN', `${r.mvp.name}  ${Math.round(r.mvp.dealt)}`],
+    ['MEISTE K.O.s', `${r.topKill.name}  ${r.topKill.kills}`]
+  ];
+  if (r.best.v) bestRows.push(['HÄRTESTER TREFFER', `${r.best.v}  ${r.best.by}`]);
+
+  const hHead = 86, hVs = 96, hBan = 48;
+  const hRoster = 2 * 18 + (r.teamLines.length + r.foeLines.length) * LH + 14;
+  const hStats = stats.length * 17 + 12;
+  const hBest = bestRows.length * 16 + 10;
+  const H2 = hHead + hVs + hBan + hRoster + hStats + hBest + 26;
+
   const c = document.createElement('canvas');
   c.width = W2; c.height = H2;
   const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
-
   const F1 = n => `${n}px "Press Start 2P", monospace`;
   const txt = (t, px2, py, size, col, align = 'left') => {
     x.font = F1(size); x.textAlign = align; x.fillStyle = col; x.fillText(t, px2, py);
   };
+  const cut = (t, n) => t.length > n ? t.slice(0, n - 1) + '…' : t;
 
   x.fillStyle = '#141a2e'; x.fillRect(0, 0, W2, H2);
-  x.fillStyle = '#1b2440'; x.fillRect(0, 0, W2, 78);
-  x.fillStyle = '#fcd000'; x.fillRect(0, 76, W2, 2);
-
+  x.fillStyle = '#1b2440'; x.fillRect(0, 0, W2, hHead);
+  x.fillStyle = '#fcd000'; x.fillRect(0, hHead - 2, W2, 2);
   txt('ANIMAL BOXING', W2 / 2, 32, 15, '#fcd000', 'center');
   txt('ABSCHLUSSBERICHT', W2 / 2, 52, 8, '#8fa3c8', 'center');
-  txt(`${r.datum}  ·  ARENA: ${r.arena.toUpperCase()}`, W2 / 2, 68, 7, '#8fa3c8', 'center');
+  txt(`${r.datum}  ·  ARENA: ${r.arena.toUpperCase()}`, W2 / 2, 70, 7, '#8fa3c8', 'center');
 
-  /* Aufstellung: Team links, Gegner rechts */
-  const sc = 1.6 / R, rowY = 152;
-  r.team.slice(0, 4).forEach((u, i) => drawSprite(x, u.def, pad + 22 + i * 34, rowY, sc, false, false));
-  const foeKinds = [...new Set(r.foes.map(u => u.def))].slice(0, 4);
-  foeKinds.forEach((d, i) => drawSprite(x, d, W2 - pad - 22 - i * 34, rowY, sc, true, false));
-  txt('VS', W2 / 2, rowY - 14, 11, '#e0403a', 'center');
-
-  const cut = (t, n) => t.length > n ? t.slice(0, n - 1) + '…' : t;
-  txt(cut(r.teamLabel, 26), pad, rowY + 16, 7, '#e8f0ff');
-  txt(cut(r.foeLabel, 26), W2 - pad, rowY + 16, 7, '#e8f0ff', 'right');
+  /* Aufstellung als Sprites — Team links, jede Gegnerart rechts */
+  const rowY = hHead + 62, sc = 1.6 / R;
+  const place = (defs, x0, dir) => defs.slice(0, 6).forEach((d, i) =>
+    drawSprite(x, d, x0 + dir * i * 32, rowY, sc, dir < 0, false));
+  place(r.team.map(u => u.def), pad + 20, 1);
+  place(r.kindDefs, W2 - pad - 20, -1);
+  txt('VS', W2 / 2, rowY - 16, 11, '#e0403a', 'center');
 
   /* Ergebnisbanner */
+  let y = hHead + hVs;
   const col = r.unentschieden ? '#fcd000' : r.sieg ? '#58d858' : '#e0403a';
   const label = r.unentschieden ? 'UNENTSCHIEDEN' : r.sieg ? 'TEAM GEWINNT' : 'TEAM VERLIERT';
-  x.fillStyle = '#0b0f1a'; x.fillRect(pad, rowY + 26, W2 - pad * 2, 30);
-  x.fillStyle = col; x.fillRect(pad, rowY + 26, 4, 30);
-  txt(label, W2 / 2, rowY + 46, 12, col, 'center');
+  x.fillStyle = '#0b0f1a'; x.fillRect(pad, y, W2 - pad * 2, 32);
+  x.fillStyle = col; x.fillRect(pad, y, 4, 32);
+  txt(label, W2 / 2, y + 21, 12, col, 'center');
+  txt(r.dauer + 's', W2 - pad - 8, y + 21, 8, '#8fa3c8', 'right');
+  y += hBan;
 
-  /* Zahlenblock */
-  let y = rowY + 78;
-  rows.forEach(([k, v], i) => {
+  /* Namentliche Aufstellung — jeder Kämpfer, jede Gegnerart */
+  const block = (titel, zahl, zeilen) => {
+    txt(titel, pad, y, 8, '#fcd000');
+    txt(zahl, W2 - pad, y, 7, '#8fa3c8', 'right');
+    y += 16;
+    zeilen.forEach(z => {
+      x.fillStyle = z.alive ? '#e8f0ff' : '#98a5c2';
+      x.font = F1(7); x.textAlign = 'left';
+      x.fillText('· ' + cut(z.name, 26), pad + 6, y);
+      txt(cut(z.detail, 28), W2 - pad, y, 7, z.alive ? '#8fa3c8' : '#7c88a6', 'right');
+      y += LH;
+    });
+    y += 6;
+  };
+  block('TEAM', `${r.teamAlive}/${r.teamTotal} übrig`, r.teamLines);
+  block('GEGNER', `${r.foeTotal - r.foeAlive}/${r.foeTotal} erledigt`, r.foeLines);
+  y += 2;
+
+  /* Zahlen */
+  stats.forEach(([k, v], i) => {
     if (i % 2 === 0) { x.fillStyle = '#19203a'; x.fillRect(pad, y - 11, W2 - pad * 2, 17); }
     txt(k, pad + 6, y, 7, '#8fa3c8');
     txt(v, W2 - pad - 6, y, 7, '#e8f0ff', 'right');
     y += 17;
   });
+  y += 10;
+  bestRows.forEach(([k, v]) => {
+    txt(k, pad, y, 7, '#8fa3c8');
+    txt(cut(v, 30), W2 - pad, y, 7, '#fcd000', 'right');
+    y += 16;
+  });
 
-  y += 12;
-  txt('MEISTER SCHADEN', pad, y, 7, '#8fa3c8');
-  txt(`${cut(r.mvp.name, 16)}  ${Math.round(r.mvp.dealt)}`, W2 - pad, y, 7, '#fcd000', 'right'); y += 16;
-  txt('MEISTE K.O.s', pad, y, 7, '#8fa3c8');
-  txt(`${cut(r.topKill.name, 16)}  ${r.topKill.kills}`, W2 - pad, y, 7, '#fcd000', 'right'); y += 16;
-  if (r.ausruestung.length) {
-    y += 4;
-    r.ausruestung.slice(0, 4).forEach((a, i) => {
-      txt(i === 0 ? 'AUSRÜSTUNG' : '', pad, y, 7, '#8fa3c8');
-      txt(cut(a, 32), W2 - pad, y, 7, '#e8f0ff', 'right'); y += 15;
-    });
-    y += 4;
-  }
-  if (r.best.v) {
-    txt('HÄRTESTER TREFFER', pad, y, 7, '#8fa3c8');
-    txt(`${r.best.v}  ${cut(r.best.by, 12)}`, W2 - pad, y, 7, '#fcd000', 'right'); y += 16;
-  }
   txt('Keine Tiere wurden verletzt. Sie sind alle nur Pixel.', W2 / 2, H2 - 10, 6, '#5b6a8c', 'center');
   return c;
 }
