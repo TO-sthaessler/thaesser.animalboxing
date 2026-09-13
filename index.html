@@ -1240,7 +1240,13 @@ function makeUnit(def, side, itemId) {
 /* Eine Kampfwelt. renderloses Steppen ist möglich -> Balancing-Tests. */
 function createWorld(teamDefs, enemyList) {
   const units = [];
-  teamDefs.forEach(d => units.push(makeUnit(d.def || d, 0, d.item)));
+  teamDefs.forEach(d => {
+    /* Akzeptiert {def, item} aus dem Setup ebenso wie einen nackten Kämpfer.
+       Unterschieden wird über build() — ein Kämpfer hat eins, der Wrapper nicht.
+       (d.def wäre hier zweideutig: bei einem Kämpfer ist das der DEF-Wert.) */
+    const def = (d && typeof d.build === 'function') ? d : d.def;
+    units.push(makeUnit(def, 0, d.item));
+  });
   enemyList.forEach(({ def, n }) => { for (let i = 0; i < n; i++) units.push(makeUnit(def, 1)); });
   layout(units);
   return {
