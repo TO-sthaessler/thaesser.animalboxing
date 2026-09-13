@@ -10,7 +10,7 @@ Dependencies. Doppelklick genügt, oder über GitHub Pages hosten.
 
 | | |
 |---|---|
-| **7 Kämpfer** | sechs stehen, ein Platz ist noch Platzhalter |
+| **7 Kämpfer** | vollzählig |
 | **10 Rollen** | Statprofil + echte Mechanik, frei zuweisbar |
 | **50 Gegner** | mit halbwegs echten Werten (Gewicht, Beisskraft, Tempo, Aggression) |
 | **4 Arenen** | Wiese, Dojo, Strand, Parkhaus |
@@ -75,8 +75,10 @@ Rollen dürfen doppelt vergeben werden.
 | Hirschi | Der Taktiker (Krit-Jäger) |
 | Marsn | Der Tritt-König (Anti-Schwarm) |
 | Sascha | Das Chaos (Glücksritter) |
+| Roi | Die Wand (Blocker) |
 
-Noch frei: Fels, Faust, Wand, Überlebender.
+Unbesetzt geblieben: Fels, Faust, Überlebender — stehen für künftige
+Umbesetzungen bereit.
 
 ## Glück
 
@@ -114,6 +116,11 @@ Signatur: `F(id, Name, Rolle, Aussehen)`. Verfügbare Aussehen-Optionen:
   und Ärmeln.
 * `hood: 1` für Kapuzenpulli (Kapuze im Nacken plus Kordeln)
 * `shadesUp: 1` für die auf den Kopf geschobene Sonnenbrille
+* `hat: 'tracht'` für den Trachtenhut mit Kordel und Feder
+  (`hatCol`, `hatBand`)
+* `jacket: 1` für einen offenen Janker über dem Hemd (`jacketCol`) —
+  färbt auch die Ärmel um
+* `sash: 1` für eine Bauchbinde (`sashCol`)
 * `hairStyle` zusätzlich: `fringe` (Pony)
 * Farben: `skin` `hair` `beardCol` `shirt` `shirt2` `shirt3` `pants` `shoe`
   `lens` `bagCol` `tattooCol` `jewel` `line`

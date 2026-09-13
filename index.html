@@ -547,8 +547,9 @@ function human(o = {}) {
 
   /* Arme — bei kurzen Aermeln liegt der Unterarm frei */
   const slv = o.shortSleeve ? 2 : 4.2;
-  rect(g, cx - w - 2.2, sh, 2.2, slv, '1');
-  rect(g, cx + w, sh, 2.2, slv, '1');
+  const sleeveCol = o.jacket ? 'i' : '1';
+  rect(g, cx - w - 2.2, sh, 2.2, slv, sleeveCol);
+  rect(g, cx + w, sh, 2.2, slv, sleeveCol);
   if (o.shortSleeve) {
     rect(g, cx - w - 2, sh + slv, 1.9, 4.2 - slv, '3');
     rect(g, cx + w + .1, sh + slv, 1.9, 4.2 - slv, '3');
@@ -582,6 +583,18 @@ function human(o = {}) {
     maskedDraw(g, () => {
       rect(g, cx - w - 2.4, sh, w * .75 + 2.4, (hip - sh) * .62, 'd');
     }, ['1', '2'], 'd');
+  }
+  if (o.sash) {                                  /* Bauchbinde */
+    rect(g, cx - w, hip - 3.4, w * 2, 1.9, 'l');
+    rect(g, cx - w, hip - 3.4, w * 2, .35, dark('#000') === '#000' ? 'e' : 'e');
+    for (let i = -w + .8; i < w; i += 1.6) px(g, cx + i, hip - 2.7, 'k');
+  }
+  if (o.jacket) {                                /* offener Janker über dem Hemd */
+    rect(g, cx - w, sh - .4, w - 1.1, hip - sh + 1.4, 'i');
+    rect(g, cx + 1.1, sh - .4, w - 1.1, hip - sh + 1.4, 'i');
+    tri(g, cx - w + .4, sh - .4, cx - 1.1, sh - .4, cx - 1.1, sh + 2.6, '2');
+    tri(g, cx + w - .4, sh - .4, cx + 1.1, sh - .4, cx + 1.1, sh + 2.6, '2');
+    px(g, cx - w + 1.4, sh + 4.4, '4'); px(g, cx + w - 1.8, sh + 4.4, '4');
   }
   if (o.hood) {                                  /* Kapuze im Nacken */
     ell(g, cx, sh - .2, w + 1.5, 2.3, '2');
@@ -622,6 +635,16 @@ function human(o = {}) {
       if (hs === 'wild') { for (let i = -3; i <= 3; i++) tri(g, cx + i * 1.1, headY - 2.4, cx + i * 1.3, headY - 5.6, cx + i * 1.1 + 1.2, headY - 2.4, '5'); }
     }
   }
+  if (o.hat === 'tracht') {                      /* Trachtenhut mit Kordel und Feder */
+    ell(g, cx, headY - 2.5, hr + 2.5, 1, 'j');                 /* Krempe */
+    rect(g, cx - hr + .1, headY - 4.4, (hr - .1) * 2, 2.2, 'j');/* Kopfteil */
+    ell(g, cx, headY - 4.5, hr - .1, 1.4, 'j');
+    rect(g, cx - hr + .1, headY - 3.2, (hr - .1) * 2, .8, 'k'); /* Kordel */
+    rect(g, cx - 1, headY - 5.4, 2, .8, '4');                   /* Delle */
+    tri(g, cx + hr - .4, headY - 3.4, cx + hr + 1.8, headY - 6, cx + hr + .6, headY - 3.1, '9');
+    lineTo(g, cx + hr + .2, headY - 3.4, cx + hr + 1.6, headY - 5.8, 'k');
+  }
+
   /* Bart */
   if (o.beard === 'full') { ell(g, cx, headY + 2.7, hr - .35, 1.7, 'h'); rect(g, cx - 1.1, headY + 2.2, 2.4, .9, '3'); }
   else if (o.beard === 'stubble') {
@@ -945,7 +968,9 @@ const PH = o => ({
   'c': dark(o.skin, .22),
   'd': o.shirt2 || '#f0f0f2', 'e': o.shirt3 || '#1a1a1f',
   'f': o.tattooCol || '#3d4f58', 'g': o.jewel || '#e8d070',
-  'h': o.beardCol || o.hair
+  'h': o.beardCol || o.hair,
+  'i': o.jacketCol || '#5e6154', 'j': o.hatCol || '#2e4a34',
+  'k': o.hatBand || '#c4a271', 'l': o.sashCol || '#d0913f'
 });
 /* ---------- ROLLEN ----------------------------------------------------
    Jede Rolle ist ein Statprofil PLUS eine echte Mechanik (passive).
@@ -1057,8 +1082,12 @@ const FIGHTERS = [
     lens: '#454e60'
   }),
 
-  /* ---- letzter Platzhalter, bis das Foto da ist ---- */
-  F('p7', 'Kämpfer 7', 'fels', { skin: '#e8b48c', hair: '#3a2a1e', hairStyle: 'buzz', beard: 'stubble', shirt: '#3a6ed0', pants: '#22304e', build: 'big' })
+  F('roi', 'Roi', 'wand', {
+    skin: '#f0c4a0', hair: '#c9a06a', hairStyle: 'buzz', beard: 'moustache', beardCol: '#a8763c',
+    hat: 'tracht', hatCol: '#2e4a34', hatBand: '#c4a271',
+    jacket: 1, jacketCol: '#5e6154', sash: 1, sashCol: '#d0913f',
+    shirt: '#bcd2e8', shirt3: '#8aa2b8', pants: '#3a3a42', shoe: '#2a2a32'
+  })
 ];
 
 /* ============================================================
