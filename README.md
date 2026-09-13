@@ -13,7 +13,7 @@ Dependencies. Doppelklick genügt, oder über GitHub Pages hosten.
 | **7 Kämpfer** | vollzählig |
 | **10 Rollen** | Statprofil + echte Mechanik, frei zuweisbar |
 | **50 Gegner** | mit halbwegs echten Werten (Gewicht, Beisskraft, Tempo, Aggression) |
-| **4 Arenen** | Wiese, Dojo, Strand, Parkhaus |
+| **8 Arenen** | animiert, mit Vordergrund-Ebene |
 | **Auto-Battle** | Intro-Animation, HP-Balken, Schadenszahlen, Kampflog, Ergebnis-Screen |
 | **22 Gegenstände** | jeder Kämpfer bringt einen mit, mit echten Auswirkungen |
 | **Abschlussbericht** | teilbare Bilanz als Bild und Text, direkt übers Sharesheet |
@@ -80,6 +80,36 @@ Rollen dürfen doppelt vergeben werden.
 
 Unbesetzt geblieben: Fels, Faust, Überlebender — stehen für künftige
 Umbesetzungen bereit.
+
+## Arenen
+
+Auswählbar im Gegner-Screen. Jede Arena hat eine Hintergrund-Ebene (`deco`)
+und optional eine Vordergrund-Ebene (`fore`), die **vor** den Kämpfern
+läuft. Beide bekommen eine Zeitachse, sind also animiert.
+
+| Arena | Was sich bewegt |
+|---|---|
+| **Geisterbahn** | Blitz alle sieben Sekunden mit Nachzucken, flackernde Fenster, schwebende Geister, Fledermäuse, Bodennebel |
+| **Strand** | anlaufende Wellen, kreisende Möwen mit Flügelschlag, Brandungssaum |
+| **Fußballstadion** | Laola-Welle läuft durch sechs Ränge, Fans reissen die Arme hoch, Flutlichtkegel |
+| **Innenstadt** | Passanten laufen im Vordergrund durchs Bild, Ampel schaltet, Fenster gehen an und aus |
+| **Wolkenkratzer** | Hubschrauber zieht alle elf Sekunden vorbei, Rotor dreht, Wolken ziehen, Antennenlicht blinkt, Wolkenfetzen im Vordergrund |
+| Wiese | Wolken ziehen |
+| Dojo | statisch |
+| Parkhaus | flackernde Neonröhren |
+
+Neue Arena = ein Eintrag in `ARENAS`:
+
+```js
+meinearena: {
+  name: 'Meine Arena', sky: ['#oben', '#unten'],
+  ground: '#boden', groundDark: '#bodenkante',
+  deco(c, W, H, hz, t) { /* hinter den Kämpfern */ },
+  fore(c, W, H, hz, t) { /* davor, optional */ }
+}
+```
+
+`t` läuft in Sekunden durch und stoppt nie — auch nicht zwischen den Kämpfen.
 
 ## Gegenstände
 
@@ -243,8 +273,8 @@ fastSim([FIGHTERS[0]], [{ def: ANIMALS.find(a => a.id === 'chihuahua'), n: 20 }]
 ## Noch offen
 
 * Feintuning am Balancing, sobald ihr gespielt habt
-* Weitere Arenen sind je ein Eintrag in `ARENAS`, weitere Gegenstände je
-  einer in `ITEMS`
+* Weitere Arenen und Gegenstände sind je ein Eintrag in `ARENAS`
+  beziehungsweise `ITEMS`
 
 ---
 

@@ -1491,13 +1491,270 @@ window.fastSim = fastSim; window.ANIMALS = ANIMALS; window.FIGHTERS = FIGHTERS;
 const ARENAS = {
   wiese: {
     name: 'Wiese', sky: ['#3a6ed0', '#7bb8f0'], ground: '#3e8f3e', groundDark: '#2c6b2c',
-    deco(c, W, H, hz) {
+    deco(c, W, H, hz, t) {
       c.fillStyle = '#ffffff22';
-      for (let i = 0; i < 5; i++) { const x = (i * 137 % W), y = 30 + (i * 43 % 50); c.fillRect(x, y, 46, 10); c.fillRect(x + 10, y - 8, 28, 10); }
+      for (let i = 0; i < 5; i++) {
+        const x = ((i * 137) + t * 6) % (W + 60) - 60, y = 30 + (i * 43 % 50);
+        c.fillRect(x, y, 46, 10); c.fillRect(x + 10, y - 8, 28, 10);
+      }
       c.fillStyle = '#2c6b2c';
       for (let i = 0; i < 40; i++) { const x = (i * 97) % W, y = hz + 10 + ((i * 53) % (H - hz - 14)); c.fillRect(x, y, 2, 4); }
     }
   },
+
+  geisterbahn: {
+    name: 'Geisterbahn', sky: ['#0e0718', '#2a1440'], ground: '#39262c', groundDark: '#20141a',
+    deco(c, W, H, hz, t) {
+      /* Fassade mit Zackendach */
+      c.fillStyle = '#1b1022'; c.fillRect(0, hz - 96, W, 96);
+      c.fillStyle = '#281634';
+      for (let x = 0; x < W; x += 30) { c.beginPath(); c.moveTo(x, hz - 96); c.lineTo(x + 15, hz - 112); c.lineTo(x + 30, hz - 96); c.closePath(); c.fill(); }
+      /* flackernde Fenster */
+      for (let i = 0; i < 7; i++) {
+        const x = 26 + i * 86, on = Math.sin(t * 6.5 + i * 2.1) > -.45;
+        c.fillStyle = on ? '#f0c030' : '#463310';
+        c.fillRect(x, hz - 76, 20, 24);
+        c.fillStyle = '#120a1e'; c.fillRect(x + 9, hz - 76, 2, 24); c.fillRect(x, hz - 65, 20, 2);
+      }
+      /* Tor */
+      c.fillStyle = '#07040d'; c.fillRect(W / 2 - 38, hz - 58, 76, 58);
+      c.fillStyle = '#3a2440'; c.fillRect(W / 2 - 42, hz - 62, 84, 5);
+      /* Schienen */
+      c.fillStyle = '#4a3c30';
+      for (let x = 0; x < W; x += 24) c.fillRect(x, hz + 34, 6, 28);
+      c.fillRect(0, hz + 34, W, 4); c.fillRect(0, hz + 58, W, 4);
+      /* Geister */
+      for (let i = 0; i < 3; i++) {
+        const gx = (i * 230 + t * 24) % (W + 90) - 45, gy = hz - 34 + Math.sin(t * 1.6 + i) * 13;
+        c.globalAlpha = .48; c.fillStyle = '#dfe6ff';
+        c.fillRect(gx, gy, 18, 20); c.fillRect(gx + 3, gy - 7, 12, 9);
+        for (let k = 0; k < 4; k++) c.fillRect(gx + k * 5, gy + 20, 4, 3 + ((k + Math.floor(t * 6)) % 2) * 4);
+        c.globalAlpha = 1; c.fillStyle = '#120a1e';
+        c.fillRect(gx + 4, gy + 3, 3, 5); c.fillRect(gx + 11, gy + 3, 3, 5);
+      }
+      /* Bodenbretter */
+      c.fillStyle = '#2c1d22';
+      for (let x = 0; x < W; x += 46) c.fillRect(x, hz + 66, 3, H - hz - 66);
+      for (let y = hz + 80; y < H; y += 34) c.fillRect(0, y, W, 2);
+      /* Kürbisse am Rand */
+      for (const [ox, oy] of [[46, H - 26], [W - 70, H - 34]]) {
+        c.fillStyle = '#c86a18'; c.fillRect(ox, oy, 22, 18);
+        c.fillStyle = '#3a5a24'; c.fillRect(ox + 9, oy - 5, 5, 6);
+        c.fillStyle = '#f8d060'; c.fillRect(ox + 4, oy + 5, 4, 4); c.fillRect(ox + 14, oy + 5, 4, 4);
+        c.fillRect(ox + 6, oy + 12, 10, 3);
+      }
+      /* Fledermäuse */
+      for (let i = 0; i < 4; i++) {
+        const bx = W + 70 - ((t * 78 + i * 160) % (W + 140)), by = 30 + Math.sin(t * 2.2 + i * 1.7) * 15 + i * 11;
+        const f = Math.sin(t * 15 + i) > 0 ? 1 : -1;
+        c.fillStyle = '#0b0512';
+        c.fillRect(bx - 2, by, 5, 4); c.fillRect(bx - 9, by - 3 * f, 7, 3); c.fillRect(bx + 3, by - 3 * f, 7, 3);
+      }
+    },
+    fore(c, W, H, hz, t) {
+      /* Bodennebel zieht durchs Bild */
+      c.fillStyle = 'rgba(180,170,220,.10)';
+      for (let i = 0; i < 3; i++) {
+        const fx = ((t * (16 + i * 7) + i * 240) % (W + 260)) - 130;
+        c.fillRect(fx, H - 40 + i * 10, 210, 12);
+      }
+      /* Blitz, etwa alle sieben Sekunden, mit Nachzucken */
+      const ph = (t + 1.7) % 7.4;
+      if (ph < .3) {
+        const a = ph < .07 ? .8 : ph < .12 ? .12 : ph < .2 ? .55 : .08;
+        c.fillStyle = `rgba(214,206,255,${a})`; c.fillRect(0, 0, W, H);
+      }
+    }
+  },
+
+  strand: {
+    name: 'Strand', sky: ['#f0a84a', '#f8d88a'], ground: '#e8d49a', groundDark: '#c8ac70',
+    deco(c, W, H, hz, t) {
+      c.fillStyle = '#f8e86a'; c.fillRect(W - 104, 26, 34, 34); c.fillRect(W - 110, 32, 46, 22); c.fillRect(W - 98, 20, 22, 46);
+      /* Meer */
+      c.fillStyle = '#1f6bb8'; c.fillRect(0, hz - 34, W, 34);
+      c.fillStyle = '#2a86d8'; c.fillRect(0, hz - 34, W, 12);
+      /* Wellen laufen an den Strand */
+      for (let r = 0; r < 3; r++) {
+        const y = hz - 28 + r * 10, off = (t * (16 + r * 10)) % 44;
+        c.fillStyle = r === 2 ? '#f2f6ff' : '#8ac8f0';
+        for (let x = -44; x < W + 44; x += 44) c.fillRect(x + off, y + Math.sin((x + t * 70) / 34) * 2, 22, 3);
+      }
+      c.fillStyle = '#f2f6ff'; c.fillRect(0, hz - 3, W, 4);
+      c.globalAlpha = .5; for (let x = 0; x < W; x += 26) c.fillRect(x + (t * 12) % 26, hz + 2, 12, 2); c.globalAlpha = 1;
+      /* Möwen */
+      for (let i = 0; i < 3; i++) {
+        const gx = (t * 38 + i * 200) % (W + 80) - 40, gy = 38 + Math.sin(t * 1.1 + i * 2) * 11 + i * 16;
+        const up = Math.sin(t * 7 + i * 2) > 0;
+        c.fillStyle = '#f8f8fc';
+        if (up) { c.fillRect(gx - 10, gy - 5, 9, 3); c.fillRect(gx + 3, gy - 5, 9, 3); }
+        else { c.fillRect(gx - 10, gy + 4, 9, 3); c.fillRect(gx + 3, gy + 4, 9, 3); }
+        c.fillRect(gx - 2, gy - 1, 6, 5);
+        c.fillStyle = '#e8a02a'; c.fillRect(gx + 4, gy, 4, 2);
+      }
+      /* Handtuch, Muscheln, Fussspuren */
+      c.fillStyle = '#d84a7a'; c.fillRect(W - 170, H - 40, 76, 26);
+      c.fillStyle = '#f0f0f2'; for (let i = 0; i < 4; i++) c.fillRect(W - 170, H - 34 + i * 7, 76, 3);
+      c.fillStyle = '#f0e0c8';
+      for (const [sx, sy] of [[180, H - 22], [300, H - 52], [420, H - 30], [96, H - 64]]) { c.fillRect(sx, sy, 7, 5); c.fillRect(sx + 2, sy - 2, 3, 2); }
+      c.fillStyle = '#d8c088';
+      for (let i = 0; i < 9; i++) { const fx = 210 + i * 26, fy = H - 12 - i * 9; c.fillRect(fx, fy, 6, 4); c.fillRect(fx + 11, fy - 6, 6, 4); }
+      /* Sonnenschirm */
+      c.fillStyle = '#b8a070'; c.fillRect(64, hz + 18, 4, 40);
+      c.fillStyle = '#e0403a'; c.fillRect(38, hz + 12, 56, 8);
+      c.fillStyle = '#f0f0f2'; c.fillRect(52, hz + 12, 12, 8); c.fillRect(80, hz + 12, 12, 8);
+    }
+  },
+
+  stadion: {
+    name: 'Fußballstadion', sky: ['#101830', '#1c2a48'], ground: '#3e8f3e', groundDark: '#2c6b2c',
+    deco(c, W, H, hz, t) {
+      /* Tribüne */
+      c.fillStyle = '#222c46'; c.fillRect(0, 0, W, hz - 12);
+      /* Laola: die Welle läuft von links nach rechts durch die Ränge */
+      const cols = ['#e0403a', '#fcd000', '#3cbcfc', '#58d858', '#f0f0f2', '#d84ad8'];
+      for (let r = 0; r < 6; r++) {
+        for (let x = 4; x < W; x += 16) {
+          const wave = Math.sin((x / W) * 6.283 * 1.5 - t * 2.4 + r * .12);
+          const lift = Math.max(0, wave - .3) * 13;
+          const y = 12 + r * 15 - lift;
+          const col = cols[(Math.floor(x / 16) + r * 3) % cols.length];
+          c.fillStyle = col; c.fillRect(x, y, 8, 9);
+          c.fillStyle = '#e8b88c'; c.fillRect(x + 1, y - 5, 6, 5);
+          if (lift > 4) { c.fillStyle = col; c.fillRect(x - 2, y - 7, 2, 7); c.fillRect(x + 8, y - 7, 2, 7); }
+        }
+      }
+      /* Flutlicht */
+      for (const fx of [70, W - 70]) {
+        c.fillStyle = '#39404e'; c.fillRect(fx - 2, 0, 5, 26);
+        c.fillStyle = '#f8f4c0'; c.fillRect(fx - 16, 4, 32, 10);
+        c.globalAlpha = .07; c.fillStyle = '#fff';
+        c.beginPath(); c.moveTo(fx - 16, 14); c.lineTo(fx + 16, 14); c.lineTo(fx + 90, hz + 60); c.lineTo(fx - 90, hz + 60); c.closePath(); c.fill();
+        c.globalAlpha = 1;
+      }
+      /* Bande */
+      c.fillStyle = '#f0f0f2'; c.fillRect(0, hz - 12, W, 12);
+      c.fillStyle = '#1b2440'; c.fillRect(0, hz - 12, W, 3);
+      for (let x = 0; x < W; x += 96) { c.fillStyle = ['#e0403a', '#3cbcfc', '#fcd000'][(x / 96) % 3]; c.fillRect(x + 6, hz - 9, 84, 6); }
+      /* Rasen */
+      for (let x = 0; x < W; x += 72) { c.fillStyle = 'rgba(255,255,255,.05)'; c.fillRect(x, hz, 36, H - hz); }
+      c.fillStyle = 'rgba(255,255,255,.35)'; c.fillRect(W / 2 - 1, hz, 3, H - hz);
+      c.fillRect(0, hz + 62, W, 3);
+      /* Strafraum */
+      c.fillStyle = 'rgba(255,255,255,.28)';
+      c.fillRect(60, H - 78, 4, 78); c.fillRect(W - 64, H - 78, 4, 78);
+      c.fillRect(60, H - 78, 120, 4); c.fillRect(W - 184, H - 78, 124, 4);
+    }
+  },
+
+  innenstadt: {
+    name: 'Innenstadt', sky: ['#4a6a90', '#8fa8c0'], ground: '#6e6e78', groundDark: '#4e4e58',
+    deco(c, W, H, hz, t) {
+      const bcol = ['#4a4450', '#3e4a56', '#544a44', '#44505a', '#4e4a58'];
+      for (let i = 0; i < 6; i++) {
+        const x = i * 110, h = 74 + ((i * 37) % 46);
+        c.fillStyle = bcol[i % bcol.length]; c.fillRect(x, hz - h, 106, h);
+        c.fillStyle = 'rgba(0,0,0,.18)'; c.fillRect(x + 102, hz - h, 4, h);
+        for (let wy = hz - h + 12; wy < hz - 24; wy += 19)
+          for (let wx = x + 10; wx < x + 94; wx += 23) {
+            const on = ((Math.floor(wx * .3 + wy * .7 + i * 5 + t * .6)) % 5) < 2;
+            c.fillStyle = on ? '#f0d878' : '#2a2f3a'; c.fillRect(wx, wy, 13, 11);
+          }
+        c.fillStyle = '#1e222c'; c.fillRect(x + 8, hz - 22, 90, 22);
+        c.fillStyle = ['#e0403a', '#3cbcfc', '#58d858', '#fcd000', '#d84ad8'][i % 5];
+        c.fillRect(x + 8, hz - 27, 90, 6);
+      }
+      /* Gehweg + Ampel */
+      c.fillStyle = '#8a8a94'; c.fillRect(0, hz, W, 12);
+      c.fillStyle = '#5a5a64'; c.fillRect(0, hz + 12, W, 3);
+      c.fillStyle = '#2a2f3a'; c.fillRect(W - 120, hz - 60, 6, 60);
+      c.fillRect(W - 128, hz - 88, 22, 30);
+      const ph = Math.floor(t / 3) % 2;
+      c.fillStyle = ph ? '#5a2020' : '#e0403a'; c.fillRect(W - 124, hz - 84, 14, 10);
+      c.fillStyle = ph ? '#58d858' : '#20502a'; c.fillRect(W - 124, hz - 70, 14, 10);
+      /* Pflaster */
+      c.fillStyle = 'rgba(0,0,0,.13)';
+      for (let y = hz + 22; y < H; y += 22) { c.fillRect(0, y, W, 2); const off = ((y - hz) / 22 % 2) * 22; for (let x = off; x < W; x += 44) c.fillRect(x, y, 2, 22); }
+      /* Gully und Kaugummis */
+      c.fillStyle = '#3e424c'; c.fillRect(150, H - 44, 30, 18);
+      c.fillStyle = '#5a5e68'; for (let i = 0; i < 4; i++) c.fillRect(154, H - 41 + i * 4, 22, 2);
+      c.fillStyle = 'rgba(0,0,0,.12)';
+      for (let i = 0; i < 14; i++) c.fillRect((i * 83) % W, hz + 30 + ((i * 61) % (H - hz - 34)), 4, 3);
+    },
+    fore(c, W, H, hz, t) {
+      /* Passanten laufen im Vordergrund durchs Bild */
+      const tops = ['#2b3350', '#8a3a3a', '#3a5a44', '#50406a'];
+      for (let i = 0; i < 4; i++) {
+        const dir = i % 2 ? 1 : -1, sp = 30 + i * 11;
+        const px = dir > 0 ? ((t * sp + i * 240) % (W + 130)) - 65 : W + 65 - ((t * sp + i * 190) % (W + 130));
+        const py = H - 10 - (i % 2) * 16;
+        const step = Math.floor(t * 6 + i * 1.7) % 2;
+        c.fillStyle = tops[i % 4]; c.fillRect(px - 8, py - 34, 16, 19);
+        c.fillStyle = '#e8b48c'; c.fillRect(px - 5, py - 44, 11, 11);
+        c.fillStyle = '#241c18'; c.fillRect(px - 6, py - 46, 13, 5);
+        c.fillStyle = '#20222c';
+        c.fillRect(px - 6 - step * 3, py - 16, 5, 16); c.fillRect(px + 2 + step * 3, py - 16, 5, 16);
+      }
+    }
+  },
+
+  wolkenkratzer: {
+    name: 'Wolkenkratzer', sky: ['#16243f', '#4a6f9e'], ground: '#5e6470', groundDark: '#42474f',
+    deco(c, W, H, hz, t) {
+      /* Stadt tief unter uns */
+      for (let i = 0; i < 16; i++) {
+        const x = (i * 43) % (W + 40) - 20, h = 26 + ((i * 53) % 58);
+        c.fillStyle = i % 2 ? '#1c2434' : '#212a3c';
+        c.fillRect(x, hz - h - 4, 38, h);
+        for (let wy = hz - h + 4; wy < hz - 12; wy += 13)
+          for (let wx = x + 5; wx < x + 32; wx += 11)
+            if (((wx + wy + i * 3) % 7) < 3) { c.fillStyle = '#f0d878'; c.fillRect(wx, wy, 5, 6); }
+      }
+      /* Wolken ziehen vorbei */
+      for (let i = 0; i < 4; i++) {
+        const cx = ((t * 11 + i * 190) % (W + 180)) - 90, cy = 24 + i * 20;
+        c.fillStyle = 'rgba(255,255,255,.13)';
+        c.fillRect(cx, cy, 76, 13); c.fillRect(cx + 18, cy - 9, 44, 13);
+      }
+      /* Dachaufbauten */
+      c.fillStyle = '#3a404c'; c.fillRect(34, hz - 30, 56, 30); c.fillRect(W - 150, hz - 22, 48, 22);
+      c.fillStyle = '#2a2f3a'; c.fillRect(40, hz - 37, 44, 8);
+      c.fillStyle = '#4e5460'; for (let i = 0; i < 4; i++) c.fillRect(40 + i * 12, hz - 26, 8, 20);
+      /* Antenne mit Blinklicht */
+      c.fillStyle = '#575e6c'; c.fillRect(W - 64, hz - 82, 6, 82);
+      if (Math.sin(t * 3.2) > 0) { c.fillStyle = '#ff4030'; c.fillRect(W - 68, hz - 90, 14, 9); }
+      /* Kieselschicht auf dem Dach */
+      c.fillStyle = '#4e535d';
+      for (let i = 0; i < 60; i++) { const x = (i * 79) % W, y = hz + 8 + ((i * 47) % (H - hz - 12)); c.fillRect(x, y, 3, 2); }
+      /* Dachkante und Lüftungsrohre */
+      c.fillStyle = '#6e7480'; c.fillRect(0, hz, W, 5);
+      c.fillStyle = '#474d57';
+      for (const [vx, vy, vw] of [[210, H - 56, 34], [420, H - 44, 26], [96, H - 34, 20]]) {
+        c.fillRect(vx, vy, vw, 16); c.fillStyle = '#5a616d'; c.fillRect(vx - 3, vy - 5, vw + 6, 6); c.fillStyle = '#474d57';
+      }
+      c.fillStyle = '#6a7180';
+      for (let x = 20; x < W; x += 120) { c.fillRect(x, H - 18, 5, 18); c.fillRect(x, H - 18, 44, 4); }
+      /* Hubschrauber zieht alle elf Sekunden durch */
+      const hp = t % 11;
+      if (hp < 6.4) {
+        const hx = -80 + (hp / 6.4) * (W + 160), hy = 48 + Math.sin(t * 2) * 7;
+        c.fillStyle = '#2f3a4a'; c.fillRect(hx, hy, 36, 14); c.fillRect(hx + 32, hy + 4, 18, 5);
+        c.fillStyle = '#8ac8f0'; c.fillRect(hx + 4, hy + 3, 11, 8);
+        c.fillStyle = '#1b2030';
+        const bl = Math.sin(t * 38) > 0 ? 32 : 9;
+        c.fillRect(hx + 18 - bl, hy - 6, bl * 2, 3); c.fillRect(hx + 16, hy - 9, 4, 4);
+        c.fillRect(hx + 47, hy - 1, 3, 11);
+        c.fillStyle = '#4a5566'; c.fillRect(hx + 6, hy + 14, 24, 3);
+      }
+    },
+    fore(c, W, H, hz, t) {
+      /* Wolkenfetzen direkt vor der Kamera */
+      const cx = ((t * 28) % (W + 340)) - 170;
+      c.fillStyle = 'rgba(255,255,255,.10)';
+      c.fillRect(cx, H - 74, 190, 19); c.fillRect(cx + 44, H - 89, 116, 17);
+    }
+  },
+
   dojo: {
     name: 'Dojo', sky: ['#2a1c28', '#4a2c38'], ground: '#9a6a3a', groundDark: '#6e4824',
     deco(c, W, H, hz) {
@@ -1507,19 +1764,16 @@ const ARENAS = {
       c.fillStyle = '#6e4824'; for (let x = 0; x < W; x += 32) c.fillRect(x, hz, 2, H - hz);
     }
   },
-  strand: {
-    name: 'Strand', sky: ['#f0a84a', '#f8d88a'], ground: '#e8d49a', groundDark: '#c8ac70',
-    deco(c, W, H, hz) {
-      c.fillStyle = '#f8e86a'; c.beginPath(); c.arc(W - 80, 46, 22, 0, 7); c.fill();
-      c.fillStyle = '#2a78c8'; c.fillRect(0, hz - 22, W, 22);
-      c.fillStyle = '#8ac8f0'; for (let x = 0; x < W; x += 24) c.fillRect(x, hz - 12, 12, 3);
-    }
-  },
+
   parkhaus: {
     name: 'Parkhaus', sky: ['#14161f', '#252a3a'], ground: '#5a5e68', groundDark: '#3e424c',
-    deco(c, W, H, hz) {
+    deco(c, W, H, hz, t) {
       c.fillStyle = '#2e3340'; c.fillRect(0, hz - 56, W, 56);
-      c.fillStyle = '#f8f0a0'; for (let x = 40; x < W; x += 140) { c.fillRect(x, hz - 52, 10, 5); c.globalAlpha = .12; c.fillRect(x - 26, hz - 50, 62, 60); c.globalAlpha = 1; }
+      for (let x = 40; x < W; x += 140) {
+        const flick = Math.sin(t * 11 + x) > -.8;
+        c.fillStyle = flick ? '#f8f0a0' : '#6a6640'; c.fillRect(x, hz - 52, 10, 5);
+        c.globalAlpha = flick ? .12 : .04; c.fillRect(x - 26, hz - 50, 62, 60); c.globalAlpha = 1;
+      }
       c.fillStyle = '#d8d8e0'; for (let x = 20; x < W; x += 70) c.fillRect(x, hz + 40, 40, 3);
     }
   }
@@ -1739,6 +1993,8 @@ const syOf = u => 150 + u.y * 176;
 /* scOf ist die Skalierung pro ECHTEM Pixel, s24 die pro Design-Einheit */
 const scOf = u => (1.9 + u.y * 1.35) * (u.vis || 1) / R;
 
+let arenaT = 0;   /* läuft immer, unabhängig vom Kampfzustand */
+
 function drawBg() {
   const a = ARENAS[arenaKey];
   const g = ctx.createLinearGradient(0, 0, 0, HZ);
@@ -1746,7 +2002,13 @@ function drawBg() {
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, HZ);
   ctx.fillStyle = a.ground; ctx.fillRect(0, HZ, W, H - HZ);
   ctx.fillStyle = a.groundDark; ctx.fillRect(0, HZ, W, 3);
-  a.deco(ctx, W, H, HZ);
+  a.deco(ctx, W, H, HZ, arenaT);
+}
+
+/* Vordergrund-Ebene: läuft VOR den Kämpfern (Passanten, Blitz, Wolkenfetzen) */
+function drawFore() {
+  const a = ARENAS[arenaKey];
+  if (a.fore) a.fore(ctx, W, H, HZ, arenaT);
 }
 
 function drawUnit(u, dx = 0) {
@@ -1860,6 +2122,7 @@ function flushLog() {
 function frame(ts) {
   raf = requestAnimationFrame(frame);
   const dt = lastTs ? Math.min(.05, (ts - lastTs) / 1000) : 1 / 60; lastTs = ts;
+  arenaT += dt;
   drawBg();
 
   if (phase === 'intro') {
@@ -1867,6 +2130,7 @@ function frame(ts) {
     const p = Math.min(1, pt / 1.1), e = 1 - Math.pow(1 - p, 3);
     const units = [...world.units].sort((a, b) => syOf(a) - syOf(b));
     units.forEach(u => drawUnit(u, (u.side === 0 ? -1 : 1) * (1 - e) * 340));
+    drawFore();
     if (pt > .5 && pt < 1.9) banner('VS', teamLabel(0).slice(0, 28) + '  —  ' + teamLabel(1).slice(0, 28), '#fcd000');
     if (pt >= 1.9) banner('FIGHT!', '', '#e0403a');
     if (pt > 2.5) {
@@ -1882,7 +2146,7 @@ function frame(ts) {
     for (let i = 0; i < speed; i++) if (!world.over) step(world, dt);
     const units = [...world.units].filter(u => u.alive).sort((a, b) => syOf(a) - syOf(b));
     units.forEach(u => drawUnit(u));
-    drawFx(); updateHud(); flushLog();
+    drawFx(); drawFore(); updateHud(); flushLog();
     if (world.over) { phase = 'end'; pt = 0; }
     return;
   }
@@ -1890,7 +2154,7 @@ function frame(ts) {
   if (phase === 'end') {
     pt += dt;
     [...world.units].filter(u => u.alive).sort((a, b) => syOf(a) - syOf(b)).forEach(u => drawUnit(u));
-    drawFx();
+    drawFx(); drawFore();
     banner('K.O.', '', '#fcd000');
     if (pt > 1.4) { cancelAnimationFrame(raf); showResult(); }
   }
