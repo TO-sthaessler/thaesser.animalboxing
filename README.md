@@ -12,7 +12,7 @@ Dependencies. Doppelklick genügt, oder über GitHub Pages hosten.
 |---|---|
 | **7 Kämpfer** | vollzählig |
 | **10 Rollen** | Statprofil + echte Mechanik, frei zuweisbar |
-| **50 Gegner** | mit halbwegs echten Werten (Gewicht, Beisskraft, Tempo, Aggression) |
+| **56 Gegner** | mit halbwegs echten Werten (Gewicht, Beisskraft, Tempo, Aggression), inklusive sechs Dinosauriern |
 | **8 Arenen** | animiert, mit Vordergrund-Ebene |
 | **Auto-Battle** | Intro-Animation, HP-Balken, Schadenszahlen, Kampflog, Ergebnis-Screen |
 | **Steuerung** | Pause, 1x/2x/4x, Foto — per Button oder Taste |
@@ -98,8 +98,8 @@ läuft. Beide bekommen eine Zeitachse, sind also animiert.
 | **Strand** | anlaufende Wellen, kreisende Möwen mit Flügelschlag, Brandungssaum |
 | **Fußballstadion** | Laola-Welle läuft durch sechs Ränge, Fans reissen die Arme hoch, Flutlichtkegel |
 | **Innenstadt** | Passanten laufen im Vordergrund durchs Bild, Ampel schaltet, Fenster gehen an und aus |
-| **Wolkenkratzer** | Hubschrauber zieht alle elf Sekunden vorbei, Rotor dreht, Wolken ziehen, Antennenlicht blinkt, Wolkenfetzen im Vordergrund |
-| Wiese | Wolken ziehen |
+| **Wolkenkratzer** | **Zwei Türme, dazwischen die Schlucht** — hinüber nur über zwei Stahlträger, und da passen zwei gleichzeitig drauf. Dazu Hubschrauber alle elf Sekunden, ziehende Wolken, blinkendes Antennenlicht |
+| **Wiese** | **Fluss mit Brücke** — hinüber geht es nur dort, und nur vier gleichzeitig. Dazu ziehende Wolken |
 | Dojo | statisch |
 | Parkhaus | flackernde Neonröhren |
 
@@ -202,6 +202,36 @@ Technisch wird die Szene in dieser Phase in einen Offscreen-Puffer
 gezeichnet und vergrössert aufs sichtbare Canvas geblittet. Der Fokuspunkt
 wird so begrenzt, dass das vergrösserte Bild das Canvas immer noch füllt.
 Bildglättung bleibt aus, die Pixel werden also grob statt matschig.
+
+## Gelände
+
+Zwei Arenen haben ein Nadelöhr. Es steckt als `terrain` im Arena-Eintrag:
+
+```js
+terrain: { rx: .5, rw: .078, by0: .43, by1: .6, cap: 4 }
+//         Mitte  Breite  Brückenband vorn/hinten  wie viele gleichzeitig
+```
+
+Wer auf die andere Seite will, wird zur Brücke geleitet und kann unterwegs
+nicht angreifen. Ist die Brücke voll, stellt man sich am Ufer an. Im
+Flussbett wird die Tiefe auf das Brückenband geklemmt — niemand watet
+daneben durch.
+
+Zwei Dinge, die beim Bauen nötig wurden:
+
+**Trichter statt Tor.** Der erste Entwurf prüfte „ist die Figur schon zur
+Auffahrt ausgerichtet?" als Ja/Nein. Das ging schief: mehrere Figuren
+brauchen in der Tiefe mehr Platz, als das Brückenband hoch ist, schoben
+sich gegenseitig heraus, verloren die Ausrichtung, liefen zurück — sieben
+Menschen standen 87 Sekunden vor der Brücke und schlugen fünfmal zu.
+Jetzt ist das Ziel immer die Ausfahrt auf der anderen Seite, wodurch alle
+beim Näherkommen von selbst zusammenlaufen.
+
+**Notventil.** Passiert eine Weile gar nichts mehr (kein Schaden, oder
+Schaden aber kein K.O.), wird die Brücke schrittweise durchlässiger und
+irgendwann ganz ignoriert. Im normalen Kampf greift das nie. Ohne das
+konnte ein einzelner Brachiosaurus auf zwei Stahlträgern das ganze
+Gefecht einfrieren.
 
 ## Gegenstände
 
@@ -330,8 +360,21 @@ F('ole', 'Ole', 'support', {
 | 7 Menschen vs 1 Nashorn / Elefant | 0 % |
 | 7 Menschen vs 20 Wölfe | 0 % |
 
-Nachtunen lässt sich das über `TUNE`, `SWEEP_RATIO`, die Formeln in
-`animalStats()` und den `fun`-Multiplikator pro Tier.
+**Körper stehen nie weiter auseinander, als ihr Angriff reicht.** Der
+Mindestabstand der Separation wird aus der Reichweite abgeleitet
+(`reachOf() * BODY_GAP`). Vorher waren das zwei unabhängige Formeln, deren
+Steigungen ab Elefantengröße kippten — der Mindestabstand wurde grösser
+als die Reichweite, und die Gegner konnten sich schlicht nicht mehr
+berühren. Das hat jeden Schwergewichtskampf stillschweigend um ein
+Vielfaches gestreckt: sieben Menschen gegen einen Elefanten dauerten 44
+Sekunden statt 11.
+
+**Oberhalb von drei Tonnen wird die Masse für die HP gestaucht.** Ohne den
+Knick hätte ein Brachiosaurus rund 7000 HP — rechnerisch konsequent, aber
+kein Kampf, den man zu Ende schauen will.
+
+Nachtunen lässt sich das über `TUNE`, `SWEEP_RATIO`, `BODY_GAP`, die
+Formeln in `animalStats()` und den `fun`-Multiplikator pro Tier.
 
 ## Abschlussbericht
 
