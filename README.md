@@ -10,7 +10,7 @@ Dependencies. Doppelklick genügt, oder über GitHub Pages hosten.
 
 | | |
 |---|---|
-| **7 Kämpfer** | Tizi steht, der Rest ist Platzhalter bis die Fotos da sind |
+| **7 Kämpfer** | Tizi und Ole stehen, der Rest ist Platzhalter bis die Fotos da sind |
 | **10 Rollen** | Statprofil + echte Mechanik, frei zuweisbar |
 | **50 Gegner** | mit halbwegs echten Werten (Gewicht, Beisskraft, Tempo, Aggression) |
 | **4 Arenen** | Wiese, Dojo, Strand, Parkhaus |
@@ -62,6 +62,16 @@ Jede Rolle ist nicht nur ein Statprofil, sondern eine echte Mechanik im Kampf.
 | Der Überlebende | Comeback | bis +90 % Schaden bei fast leerer HP-Leiste |
 
 Rollen stehen in `ROLES`, Zuweisung passiert in `FIGHTERS` über den dritten Parameter.
+Rollen dürfen doppelt vergeben werden.
+
+### Vergeben
+
+| Kämpfer | Rolle |
+|---|---|
+| Tizi | Der Blitz (Speedster) |
+| Ole | Der Schreihals (Support) |
+
+Noch frei: Fels, Faust, Taktiker, Wand, Chaos, One-Punch, Tritt-König, Überlebender.
 
 ## Glück
 
@@ -91,11 +101,24 @@ Signatur: `F(id, Name, Rolle, Aussehen)`. Verfügbare Aussehen-Optionen:
 
 * `hairStyle`: `short` `buzz` `long` `bun` `curly` `wild` `mohawk` `bald` `cap`
 * `beard`: `full` `stubble` `goatee` `moustache` (oder weglassen)
-* Flags: `shades` (Sonnenbrille), `glasses` (normale Brille), `shorts`,
+* Flags: `shades` (Sonnenbrille), `glasses` (kräftiger Rahmen), `shorts`,
   `shortSleeve` (T-Shirt statt Langarm), `socks`, `bag` (Umhängetasche),
-  `watch`, `logo`, `tall`
-* Farben: `skin` `hair` `shirt` `pants` `shoe` `lens` `bagCol` `line`
+  `watch`, `earring`, `tattoo` (Unterarm), `logo`, `tall`
+* `shirtPat`: `diag` (Trikot mit Diagonalen) oder `stripes`
+* Farben: `skin` `hair` `beardCol` `shirt` `shirt2` `shirt3` `pants` `shoe`
+  `lens` `bagCol` `tattooCol` `jewel` `line`
 * `build`: `slim` | `normal` | `big`
+
+Ole als Beispiel für die neuen Optionen:
+
+```js
+F('ole', 'Ole', 'support', {
+  skin: '#f2cba8', hair: '#d4739e', hairStyle: 'buzz', beard: 'moustache',
+  beardCol: '#a87545', glasses: 1, earring: 1, tattoo: 1, shortSleeve: 1, shorts: 1,
+  shirt: '#1f6b4a', shirtPat: 'diag', shirt2: '#f0f0f2', shirt3: '#191a1f',
+  pants: '#1c1c22', shoe: '#26262e'
+})
+```
 
 ## Kampfmathematik
 
