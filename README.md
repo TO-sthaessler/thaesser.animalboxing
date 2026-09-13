@@ -86,7 +86,9 @@ Umbesetzungen bereit.
 
 ## Arenen
 
-Auswählbar im Gegner-Screen. Jede Arena hat eine Hintergrund-Ebene (`deco`)
+Eigener Schritt im Setup ("3. Arena wählen") mit echten Vorschaubildern —
+jede Kachel ist die Arena selbst, in den Offscreen-Puffer gerendert und
+verkleinert. Jede Arena hat eine Hintergrund-Ebene (`deco`)
 und optional eine Vordergrund-Ebene (`fore`), die **vor** den Kämpfern
 läuft. Beide bekommen eine Zeitachse, sind also animiert.
 
@@ -113,6 +115,38 @@ meinearena: {
 ```
 
 `t` läuft in Sekunden durch und stoppt nie — auch nicht zwischen den Kämpfen.
+
+## Protokolle
+
+Auf dem Ergebnis-Screen stehen zwei Protokolle:
+
+**Kampfprotokoll** — der vollständige Kampflog zum Nachlesen, nichts
+abgeschnitten. Im Kampf selbst wird die Anzeige bei 120 Zeilen gekappt,
+damit sie flüssig bleibt; hier steht alles.
+
+**Balancing-Log** — ein technisches Log zum Nachjustieren. Enthält die
+aktuellen Stellschrauben (`TUNE`, `LUCK`, `SWEEP_RATIO`) samt Formeln,
+eine Tabelle pro Kämpfer (Werte, Rest-HP, ausgeteilter und kassierter
+Schaden, K.O.s, Angriffe, Trefferquote), dieselbe Tabelle für die Gegner
+nach Art zusammengefasst, Gesamtzahlen inklusive Schaden pro Sekunde je
+Seite, und am Ende alle Ereignisse. Zum Kopieren oder als `.txt`.
+
+Das Log macht Zielkonflikte sichtbar, die man sonst nur ahnt — etwa dass
+ein Kämpfer mit Gartenstuhl (+14 DEF, −4 SPD) in elf Sekunden nur zweimal
+zum Schlag kommt.
+
+## Nicht indexieren
+
+Die Seite trägt `noindex, nofollow, noarchive, nosnippet, noimageindex`
+als Meta-Tag, dazu `referrer: no-referrer`. Suchmaschinen, die sich daran
+halten, nehmen sie nicht auf.
+
+Die beiliegende `robots.txt` greift **nur**, wenn die Seite unter einer
+eigenen Domain im Wurzelverzeichnis liegt. Bei GitHub Pages als
+Projektseite (`…github.io/thaesser.animalboxing/`) wird sie unter einem
+Unterpfad ausgeliefert und dort von Crawlern ignoriert — verlassen könnt
+ihr euch dort allein auf das Meta-Tag. Wer die Seite wirklich privat
+halten will, legt sie nicht auf eine öffentliche URL.
 
 ## Steuerung im Kampf
 
@@ -141,6 +175,22 @@ tausende Kämpfe in Sekunden durchrechnen.
 Der Ton-Button steht in der Kampfleiste, die Einstellung überlebt in
 `localStorage`. Der AudioContext wird erst beim ersten Klick geöffnet,
 weil Browser ihn sonst blockieren.
+
+## Siegesfeier
+
+Nach der Zeitlupe feiern die Überlebenden: sie sammeln sich in Reihen in
+der Bildmitte und hopsen versetzt, dazu Konfetti und eine Fanfare.
+
+Menschen reissen dabei die Arme hoch — dafür hat der Mensch-Bauplan eine
+zweite Pose (`armsUp`). Sie wird als eigener Sprite gebaut und im
+Cache gehalten, Ärmel, Uhr und Tattoo wandern korrekt mit. Tiere hopsen
+nur; ein springender Braunbär reicht auch so.
+
+Der Abstand der Figuren richtet sich nach der grössten beteiligten Figur,
+sonst stehen zwei Bären ineinander.
+
+Gewinnen die Tiere, feiern eben sie — die Feier gehört der Seite, die
+übrig ist.
 
 ## Zeitlupe
 
@@ -187,6 +237,8 @@ Gegenstand wird im Kampf in der Hand mitgeführt und steht im Bericht.
 Die schweren Sachen sind ein echter Zielkonflikt: Bierbank und Sprudelkiste
 hauen hart, kosten aber so viel Tempo, dass man gegen einen einzelnen
 grossen Gegner schlechter fährt als mit blanken Fäusten.
+
+Im Aufklappmenü stehen sie alphabetisch, „— nichts —" bleibt vorn.
 
 Neue Gegenstände kommen in `ITEMS`. Das Feld `mod` versteht `atk`, `def`,
 `spd`, `hp`, `reach`, `sweep`, `block`, `dodge`, `crit`, `luck`, `thorns`
@@ -297,12 +349,15 @@ Das Sharesheet braucht einen sicheren Kontext (HTTPS oder localhost).
 Per Doppelklick aus dem Dateisystem geöffnet greift automatisch der
 Fallback.
 
-Im Bericht stehen: Aufstellung beider Seiten mit Sprites, Ergebnis und
-Dauer, Überlebende mit Rest-HP, Gefallene, erledigte Gegner nach Art,
-Meister Schaden, meiste K.O.s, meiste Prügel eingesteckt, härtester
-Treffer mit Urheber, sowie Angriffe, Gesamtschaden, Schaden pro Sekunde,
-ausgelöste Specials, Krits, Glückstreffer, Fehlschläge, Ausweichmanöver
-und Blocks.
+Im Bericht steht die **vollständige Aufstellung beider Seiten** — jeder
+Kämpfer namentlich mit Gegenstand und Rest-HP beziehungsweise K.O., und
+jede Gegnerart mit Anzahl und wie viele davon erledigt wurden. Nichts
+wird abgeschnitten; die Bildhöhe wächst mit der Liste.
+
+Dazu Ergebnis und Dauer, Meister Schaden, meiste K.O.s, meiste Prügel
+eingesteckt, härtester Treffer mit Urheber, sowie Angriffe,
+Gesamtschaden, Schaden pro Sekunde, ausgelöste Specials, Krits,
+Glückstreffer, Fehlschläge, Ausweichmanöver und Blocks.
 
 ## Balancing selbst testen
 
