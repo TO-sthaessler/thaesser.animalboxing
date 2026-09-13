@@ -2417,8 +2417,10 @@ function buildFighterGrid() {
   add.onclick = openNewFighter;
   g.appendChild(add);
 
+  /* Eigene direkt hinter dem Plus, neueste zuerst — wer gerade jemanden
+     angelegt hat, sieht ihn sofort daneben */
+  [...customs].reverse().forEach(c => g.appendChild(fighterCard(customDef(c), true)));
   FIGHTERS.forEach(f => g.appendChild(fighterCard(f, false)));
-  customs.forEach(c => g.appendChild(fighterCard(customDef(c), true)));
 }
 
 /* --- Dialog "eigenen Kämpfer anlegen" --- */
