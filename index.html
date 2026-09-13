@@ -369,6 +369,19 @@ function quad(o = {}) {
   if (o.horn === 'antler') { for (const s of [-1, 1]) { lineTo(g, headX + s * 1.4, headY - hry, headX + s * 3.4, headY - hry - 4, '5'); lineTo(g, headX + s * 2.4, headY - hry - 2, headX + s * 4.8, headY - hry - 2.6, '5'); lineTo(g, headX + s * 3.4, headY - hry - 4, headX + s * 5, headY - hry - 4.6, '5'); } }
   if (o.tusk) { lineTo(g, headX + hrx + sn - 1.5, sy + 1, headX + hrx + sn - 2.4, sy - 2.2, '9', 1); lineTo(g, headX + hrx + sn - .2, sy + 1, headX + hrx + sn + .4, sy - 2.4, '9', 1); }
   if (o.trunk) { lineTo(g, headX + hrx, headY + 1, headX + hrx + 2.4, headY + 5.4, '1', 2); lineTo(g, headX + hrx + 2.4, headY + 5.4, headX + hrx + 4, headY + 6.6, '1', 2); ell(g, headX - .5, headY + .5, hrx + .6, hry + 1.6, '2'); ell(g, headX, headY, hrx, hry, '1'); }
+  if (o.frill) {                                  /* Nackenschild (Triceratops) */
+    ell(g, headX - 1.7, headY - 1.1, hrx + .8, hry + 1.4, '5');
+    for (let i = -2; i <= 2; i++)
+      ell(g, headX - 1.7 + i * 1.3, headY - 1.1 - (hry + 1) + Math.abs(i) * .5, .8, .8, '5');
+    ell(g, headX, headY, hrx, hry, '1');
+  }
+  if (o.plates) {                                 /* Rueckenplatten (Stegosaurus) */
+    for (let i = 0; i < 6; i++) {
+      const px2 = bx - brx * .75 + (i / 5) * brx * 1.5;
+      const h = 2.6 + Math.sin(Math.PI * i / 5) * 2.4;
+      tri(g, px2 - 1.3, by - bry + .4, px2, by - bry - h, px2 + 1.3, by - bry + .4, '5');
+    }
+  }
   if (o.spikes) for (let i = 0; i < 9; i++) { const a = Math.PI * (0.08 + 0.84 * (i / 8)); tri(g, bx + Math.cos(a) * brx * .9 - 1, by - Math.sin(a) * bry * .9, bx + Math.cos(a) * (brx + 3.4), by - Math.sin(a) * (bry + 3.6), bx + Math.cos(a) * brx * .9 + 1, by - Math.sin(a) * bry * .9, '5'); }
 
   pattern(g, o.pat, '7', o.seed ?? 3, { x0: bx - brx, x1: bx + brx * .95, y0: by - bry, y1: by + bry });
@@ -516,6 +529,46 @@ function kangaroo(o = {}) {
   ell(g, 16.4, 7, 1.8, 1.2, '1'); px(g, 17.8, 6.8, '5');
   ell(g, 12.6, 3.6, 1, 2.6, '1'); ell(g, 15.2, 3.4, 1, 2.6, '1');
   px(g, 15, 6.2, '4');
+  return outline(autoShade(g));
+}
+
+/* --- Theropoden: T-Rex, Raptor --- */
+function theropod(o = {}) {
+  const g = newGrid();
+  const brx = o.brx ?? 5, bry = o.bry ?? 2.8;
+  const legLen = o.legLen ?? 6;
+  const bx = o.bx ?? 9, by = GROUND_Y - legLen - bry + 1.6;
+  const hx2 = bx + brx + (o.headFwd ?? 3.4), hy2 = by - (o.headUp ?? 5);
+
+  /* Schwanz waagerecht nach hinten */
+  tri(g, bx - brx + 1, by - 1.6, bx - brx - (o.tailLen ?? 7), by - 3.4, bx - brx + 1, by + 2, '2');
+  /* hinteres Bein (Schattenseite) */
+  lineTo(g, bx - .6, by + bry - .6, bx - 2.4, by + bry + 2.6, '2', 2.4);
+  lineTo(g, bx - 2.4, by + bry + 2.6, bx + .4, GROUND_Y - 1, '2', 1.8);
+  rect(g, bx - .6, GROUND_Y - 1, 4, 2, '2');
+  /* Rumpf */
+  ell(g, bx, by, brx, bry, '1');
+  ell(g, bx, by + bry * .45, brx * .7, bry * .45, '3');
+  /* vorderes Bein */
+  lineTo(g, bx + 1.4, by + bry - .8, bx - .6, by + bry + 2.8, '1', 2.6);
+  lineTo(g, bx - .6, by + bry + 2.8, bx + 2.4, GROUND_Y - 1, '1', 2);
+  rect(g, bx + 1.4, GROUND_Y - 1, 4.4, 2, '1');
+  /* Hals */
+  lineTo(g, bx + brx - 1.4, by - bry + .8, hx2 - 1.6, hy2 + 1.4, '1', 2.8);
+  /* Kopf mit Schnauze */
+  ell(g, hx2, hy2, 2.4, 2, '1');
+  const sn2 = o.snout ?? 4;
+  rect(g, hx2 + 1, hy2 - 1.2, sn2, 2.6, '1');
+  rect(g, hx2 + 1.2, hy2 + 1, sn2 - .6, .6, '4');            /* Maullinie */
+  const nt = o.teeth ?? 3;
+  for (let i = 0; i < nt; i++) px(g, hx2 + 1.8 + i * (sn2 - 1.8) / Math.max(1, nt - 1), hy2 + 1.4, '9');
+  if (o.crest) rect(g, hx2 - .6, hy2 - 2.8, 3, 1, '5');
+  /* Aermchen */
+  lineTo(g, bx + brx - 1.6, by - .4, bx + brx + .8, by + 1.6, '2', 1.4);
+  px(g, bx + brx + 1.2, by + 2, '5');
+  pattern(g, o.pat, '7', o.seed ?? 17, { x0: bx - brx, x1: bx + brx, y0: by - bry, y1: by + bry });
+  px(g, hx2 + .4, hy2 - .8, '4'); glint(g, hx2 + .4, hy2 - .8);
+  if (o.brow) rect(g, hx2 - .8, hy2 - 2, 2.6, 1, '2');
   return outline(autoShade(g));
 }
 
@@ -985,7 +1038,39 @@ const ANIMALS = [
     P('#4a3228', { pat: '#8a4a2a' }), () => spider({ hairy: 1, pat: 'band' })),
   A('skorpion', 'Skorpion', 'Krabbeltiere', .03, 3, 12, 7, 1,
     { n: 'Stachel-Stich', c: .24, m: 2.6, t: '$A trifft mit dem Schwanz. Neurotoxin inklusive.' },
-    P('#8a5a20', { accent: '#3a2410' }), () => scorpion())
+    P('#8a5a20', { accent: '#3a2410' }), () => scorpion()),
+
+  /* ---------- DINOSAURIER ----------
+     Werte nach heutigem Forschungsstand geschaetzt. Wer sie einsetzt,
+     weiss, worauf er sich einlaesst. */
+  A('velociraptor', 'Velociraptor', 'Dinosaurier', 15, 200, 40, 9, 1,
+    { n: 'Sichelkralle', c: .22, m: 2.6, t: '$A springt $B an. Die Kralle macht den Rest.' },
+    P('#7a6a3a', { pat: '#4a3c1e', belly: '#c8bc86', accent: '#c03a2a' }),
+    () => theropod({ brx: 3.2, bry: 1.9, legLen: 4.4, headFwd: 2.4, headUp: 3.4, snout: 2.6, teeth: 2, tailLen: 6, pat: 'stripes' })),
+  A('trex', 'Tyrannosaurus', 'Dinosaurier', 8000, 12800, 30, 10, 1,
+    { n: 'Knochenknacker', c: .18, m: 3.4, t: '$A beisst mit 5,7 Tonnen zu. Von $B bleibt wenig.' },
+    P('#6a6450', { belly: '#b0a884', accent: '#3a3428', pat: '#4a4638' }),
+    () => theropod({ brx: 6.2, bry: 3.4, legLen: 7, headFwd: 4, headUp: 5.6, snout: 5, teeth: 3, tailLen: 8, brow: 1 }),
+    { armor: 1 }),
+  A('triceratops', 'Triceratops', 'Dinosaurier', 9000, 1000, 25, 7, 1,
+    { n: 'Drei-Horn-Ansturm', c: .18, m: 3.1, t: '$A senkt den Kopf und geht durch $B durch.' },
+    P('#7a7258', { accent: '#a2977a' }),
+    () => quad({ brx: 7.4, bry: 3.8, legLen: 4.6, legW: 3, hrx: 2.9, hry: 2.5, snout: 3, neck: 1.4,
+                 ears: 'none', tail: 'thin', tailLen: 3, frill: 1, horn: 'pair' }), { armor: 2 }),
+  A('stegosaurus', 'Stegosaurus', 'Dinosaurier', 5000, 300, 20, 5, 1,
+    { n: 'Thagomizer', c: .2, m: 2.9, t: '$A dreht sich um. Der Schwanz hat vier Stacheln.' },
+    P('#5f7a4a', { accent: '#c86a3a' }),
+    () => quad({ brx: 7.6, bry: 3.4, legLen: 4.2, legW: 2.8, hrx: 2, hry: 1.7, snout: 2.2, neck: 1,
+                 ears: 'none', tail: 'tuft', tailLen: 5, plates: 1 }), { armor: 2 }),
+  A('brachiosaurus', 'Brachiosaurus', 'Dinosaurier', 50000, 200, 15, 3, .6,
+    { n: 'Einfach weiterlaufen', c: .2, m: 2.4, t: '$A hat $B vermutlich nicht einmal bemerkt.' },
+    P('#8a8068', { belly: '#c0b898', accent: '#4a4438' }),
+    () => quad({ brx: 7.2, bry: 3.6, legLen: 6.4, legW: 3, hrx: 1.8, hry: 1.5, snout: 1.6,
+                 headX: 19, headY: 2.4, ears: 'none', tail: 'long', tailLen: 7 }), { armor: 1 }),
+  A('pteranodon', 'Pteranodon', 'Dinosaurier', 25, 200, 80, 6, 1,
+    { n: 'Sturz aus der Sonne', c: .2, m: 2.7, t: '$A kommt von oben. $B hat nach oben nicht geschaut.' },
+    P('#8a7a6a', { accent: '#c8a03a', extra: '#c05a3a' }),
+    () => bird({ brx: 4, bry: 3, neck: 3, legLen: 3.4, beak: 6, hooked: 1, crest: 1, tailLen: 2, brow: 1 }))
 ];
 
 /* ============================================================
@@ -1227,8 +1312,12 @@ const SWEEP_RATIO = .62;   /* ab wann gilt ein Gegner als "deutlich kleiner" */
 
 function animalStats(a) {
   const kg = Math.max(a.kg, 0.0005), fun = a.fun || 1;
+  /* Oberhalb von drei Tonnen wird die Masse fuer die HP gestaucht. Ohne den
+     Knick haette ein Brachiosaurus rund 7000 HP — rechnerisch konsequent,
+     aber kein Kampf, den man zu Ende schauen will. */
+  const mHp = kg <= 3000 ? kg : 3000 + (kg - 3000) * .18;
   return {
-    hp: Math.max(4, Math.round((1 + Math.pow(kg, .7) * 6) * fun)),
+    hp: Math.max(4, Math.round((1 + Math.pow(mHp, .7) * 6) * fun)),
     atk: Math.max(1, Math.round((1.5 + Math.pow(kg, .42) * 2 + Math.pow(Math.max(a.bite, 1), .42) * .75 + a.aggr * .45) * fun)),
     def: Math.round(Math.pow(kg, .3) * 1.8 + (a.armor || 0) * 6 + 1),
     spd: Math.round(4 + a.kmh * .12 + a.aggr * .5)
@@ -1250,6 +1339,13 @@ function engageSlots(target, attacker) {
   return Math.max(1, Math.min(9, Math.round(n * .45)));
 }
 const mitigate = (atk, df) => atk * (1 - df / (df + TUNE.mitig));
+/* Angriffsreichweite zweier Koerper. Der Mindestabstand der Separation wird
+   DARAUS abgeleitet (BODY_GAP < 1), damit sich zwei Einheiten niemals weiter
+   auseinanderschieben, als ihr Angriff reicht. Vorher waren das zwei
+   unabhaengige Formeln, deren Steigungen ab Elefantengroesse kippten — die
+   Gegner konnten sich dann nicht mehr beruehren. */
+const reachOf = (a, b) => .034 + (a.size + b.size) * .0065;
+const BODY_GAP = .72;
 
 let _uid = 0;
 function makeUnit(def, side, itemId) {
@@ -1282,6 +1378,8 @@ function createWorld(teamDefs, enemyList) {
   layout(units);
   return {
     units, t: 0, log: [], fx: [], over: false, winner: null, started: false,
+    terrain: (ARENAS[arenaKey] && ARENAS[arenaKey].terrain) || null,
+    lastDmg: 0, lastKill: 0,
     stats: { hits: 0, kos: 0, specials: 0, crit: 0, lucky: 0, miss: 0, dodge: 0, block: 0, dmg: 0,
              best: { v: 0, by: '', on: '', kind: '' } }
   };
@@ -1302,6 +1400,45 @@ function layout(units) {
   });
 }
 
+/* Wegpunkt zum Ziel. Trennt ein Fluss die beiden, fuehrt der Weg ueber die
+   Bruecke — und dort passen nur `cap` Kaempfer gleichzeitig drauf.
+   detour heisst: noch nicht am Ziel, also auch kein Angriff moeglich. */
+function routeTo(w, u, t) {
+  const T = w.terrain;
+  if (!T) return { x: t.x, y: t.y, detour: false, wait: false };
+  const half = T.rw / 2;
+  const imSpan = o => Math.abs(o.x - T.rx) <= half + .015;
+  const seite = o => o.x < T.rx ? -1 : 1;
+  /* schon auf der Brücke, Ziel auf der Brücke oder beide am selben Ufer: direkt */
+  if (imSpan(u) || imSpan(t) || seite(u) === seite(t))
+    return { x: t.x, y: t.y, detour: false, wait: false };
+
+  /* Notventil gegen Pattsituationen an der Bruecke: passiert eine Weile gar
+     nichts mehr, wird die Bruecke schrittweise durchlaessiger und irgendwann
+     ganz ignoriert. Im normalen Kampf greift das nie, weil staendig Schaden
+     faellt. */
+  const ruhe = w.t - (w.lastDmg || 0);     /* gar kein Schaden mehr */
+  const zaeh = w.t - (w.lastKill || 0);    /* Schaden ja, aber niemand faellt */
+  if (ruhe > 25 || zaeh > 35) return { x: t.x, y: t.y, detour: false, wait: false };
+  const kap = T.cap + Math.max(0, Math.floor((ruhe - 7) / 6))
+                    + Math.max(0, Math.floor((zaeh - 15) / 8));
+
+  const midY = (T.by0 + T.by1) / 2, s = seite(u);
+  /* Trichter statt Tor: das Ziel ist immer die Ausfahrt auf der anderen Seite,
+     auf Bruecken-Hoehe. Dadurch laufen alle beim Naeherkommen von selbst in der
+     Tiefe zusammen. Ein Ja/Nein-Test "schon ausgerichtet?" hat hier nicht
+     funktioniert: mehrere Figuren brauchen in der Tiefe mehr Platz als das
+     Brueckenband hoch ist, schieben sich gegenseitig heraus und laufen ewig
+     zwischen zwei Zustaenden hin und her. */
+  const ausfahrt = T.rx - s * (half + .05);
+  const drauf = w.units.reduce((n, o) => n + (o.alive && imSpan(o) ? 1 : 0), 0);
+  const amUfer = Math.abs(u.x - T.rx) < half + .085;
+  /* Bruecke voll: am Ufer anstellen statt hinterherdraengeln */
+  if (drauf >= kap && amUfer)
+    return { x: T.rx + s * (half + .06), y: midY, detour: true, wait: true };
+  return { x: ausfahrt, y: midY, detour: true, wait: false };
+}
+
 function enemiesOf(w, u) { return w.units.filter(o => o.alive && o.side !== u.side); }
 
 function pickTarget(w, u) {
@@ -1320,6 +1457,7 @@ function pickTarget(w, u) {
 }
 
 function applyDamage(w, atk, tgt, raw, tag) {
+  w.lastDmg = w.t;
   let dmg = Math.max(1, Math.round(raw));
   if (dmg > w.stats.best.v) w.stats.best = { v: dmg, by: atk.name, on: tgt.name, kind: tag };
   let chain = 0, cur = tgt;
@@ -1332,7 +1470,7 @@ function applyDamage(w, atk, tgt, raw, tag) {
                 crit: tag === 'crit' || tag === 'special', sp: tag === 'special', life: .9 });
     if (cur.hp <= 0) {
       cur.hp = 0; cur.alive = false; cur.target = null; atk.kills++; w.stats.kos++;
-      w.lastKO = { x: cur.x, y: cur.y };
+      w.lastKO = { x: cur.x, y: cur.y }; w.lastKill = w.t;
       w.fx.push({ k: 'poof', x: cur.x, y: cur.y, life: .5 });
       w.log.push({ c: 'ko', s: `${cur.name} ist K.O.!` });
     }
@@ -1445,15 +1583,24 @@ function step(w, dt) {
     u.lunge = Math.max(0, u.lunge - dt * 3.2);
     if (!u.target || !u.target.alive) u.target = pickTarget(w, u);
     const t = u.target; if (!t) { u.waiting = false; continue; }
-    const dx = t.x - u.x, dy = t.y - u.y;
+    const wp = routeTo(w, u, t);
+    const dx = wp.x - u.x, dy = wp.y - u.y;
     const dist = Math.hypot(dx, dy * .4) || 1e-6;
-    const reach = .034 + (u.size + t.size) * .0065 + (u.im.reach || 0) + (u.waiting ? .02 : 0);
+    const reach = reachOf(u, t) + (u.im.reach || 0) + (u.waiting ? .02 : 0);
     u._reach = reach;
-    if (dist > reach) {
-      const v = (0.10 + u.spd * 0.013) * dt;
-      u.x += (dx / dist) * v; u.y += (dy / dist) * v * .5;
-      u.y = Math.max(.1, Math.min(.88, u.y));
-      u.waiting = false;
+    if (wp.detour || dist > reach) {
+      if (wp.wait) {
+        /* Brücke voll — am Ufer anstellen */
+        u.waiting = true;
+        const ang = u.uid * 1.7 + w.t * 1.1;
+        u.y += Math.sin(ang) * .0015;
+        u.y = Math.max(.1, Math.min(.88, u.y));
+      } else {
+        const v = (0.10 + u.spd * 0.013) * dt;
+        u.x += (dx / dist) * v; u.y += (dy / dist) * v * .5;
+        u.y = Math.max(.1, Math.min(.88, u.y));
+        u.waiting = false;
+      }
     } else {
       if (!inReach.has(t)) inReach.set(t, []);
       inReach.get(t).push({ u, dist });
@@ -1500,16 +1647,25 @@ function step(w, dt) {
       const b1 = live[j];
       const dx = b1.x - a1.x, dy = (b1.y - a1.y) * .38;
       const d = Math.hypot(dx, dy);
-      const minD = .022 + (a1.size + b1.size) * .0072;
+      const minD = reachOf(a1, b1) * BODY_GAP;
       if (d < minD && d > 1e-5) {
         const push = (minD - d) * .5, nx = dx / d, ny = dy / d;
         const wa = b1.size / (a1.size + b1.size), wb = 1 - wa;
-        a1.x -= nx * push * wa * 2; a1.y -= ny * push * wa * 4;
-        b1.x += nx * push * wb * 2; b1.y += ny * push * wb * 4;
+        /* wer in der Warteschlange steht, laesst sich weniger herumschubsen */
+        const ha = a1.waiting ? .3 : 1, hb = b1.waiting ? .3 : 1;
+        a1.x -= nx * push * wa * 2 * ha; a1.y -= ny * push * wa * 4 * ha;
+        b1.x += nx * push * wb * 2 * hb; b1.y += ny * push * wb * 4 * hb;
       }
     }
   }
-  for (const u of live) { u.x = Math.max(.03, Math.min(.97, u.x)); u.y = Math.max(.1, Math.min(.88, u.y)); }
+  for (const u of live) {
+    u.x = Math.max(.03, Math.min(.97, u.x));
+    u.y = Math.max(.1, Math.min(.88, u.y));
+    /* im Flussbett gibt es nur die Brücke — niemand watet daneben durch */
+    const T = w.terrain;
+    if (T && Math.abs(u.x - T.rx) <= T.rw / 2 + .015)
+      u.y = Math.max(T.by0 + .012, Math.min(T.by1 - .012, u.y));
+  }
 
   for (let i = w.fx.length - 1; i >= 0; i--) { w.fx[i].life -= dt; if (w.fx[i].life <= 0) w.fx.splice(i, 1); }
   const a = w.units.some(u => u.alive && u.side === 0), b = w.units.some(u => u.alive && u.side === 1);
@@ -1611,6 +1767,9 @@ const SFX = (() => {
 const ARENAS = {
   wiese: {
     name: 'Wiese', sky: ['#3a6ed0', '#7bb8f0'], ground: '#3e8f3e', groundDark: '#2c6b2c',
+    /* Gelände: ein Fluss teilt die Wiese, überquert wird nur über die Brücke,
+       und dort passen nur `cap` Kämpfer gleichzeitig drauf. */
+    terrain: { rx: .5, rw: .078, by0: .43, by1: .6, cap: 4 },
     deco(c, W, H, hz, t) {
       c.fillStyle = '#ffffff22';
       for (let i = 0; i < 5; i++) {
@@ -1619,6 +1778,35 @@ const ARENAS = {
       }
       c.fillStyle = '#2c6b2c';
       for (let i = 0; i < 40; i++) { const x = (i * 97) % W, y = hz + 10 + ((i * 53) % (H - hz - 14)); c.fillRect(x, y, 2, 4); }
+
+      const T = this.terrain;
+      const x0 = sxAt(T.rx - T.rw / 2), x1 = sxAt(T.rx + T.rw / 2);
+      const y0 = syAt(T.by0), y1 = syAt(T.by1);
+
+      /* Fluss von hinten nach vorn */
+      c.fillStyle = '#2f5f34';                       /* Uferböschung */
+      c.fillRect(x0 - 5, hz, (x1 - x0) + 10, H - hz);
+      c.fillStyle = '#2a72b8'; c.fillRect(x0, hz, x1 - x0, H - hz);
+      c.fillStyle = '#3a8fd8';
+      for (let y = hz; y < H; y += 7) {
+        const off = Math.sin(y * .16 + t * 2.2) * 4;
+        c.fillRect(x0 + 3 + off, y, (x1 - x0) - 8, 3);
+      }
+      c.fillStyle = '#cfe8ff';
+      for (let i = 0; i < 9; i++) {
+        const yy = hz + ((i * 61 + t * 34) % (H - hz));
+        c.fillRect(x0 + 5 + ((i * 13) % Math.max(6, x1 - x0 - 14)), yy, 5, 2);
+      }
+
+      /* Brücke quer darüber */
+      c.fillStyle = '#7a5230'; c.fillRect(x0 - 16, y0, (x1 - x0) + 32, y1 - y0);
+      c.fillStyle = '#5e3d22';
+      for (let x = x0 - 16; x < x1 + 16; x += 9) c.fillRect(x, y0, 2, y1 - y0);
+      c.fillStyle = '#8f6238'; c.fillRect(x0 - 16, y0, (x1 - x0) + 32, 3);
+      c.fillStyle = '#4a2f1a'; c.fillRect(x0 - 16, y1 - 3, (x1 - x0) + 32, 3);
+      /* Geländer hinten, damit die Brücke Tiefe bekommt */
+      c.fillStyle = '#6b4526'; c.fillRect(x0 - 16, y0 - 11, (x1 - x0) + 32, 4);
+      for (let x = x0 - 14; x < x1 + 16; x += 14) c.fillRect(x, y0 - 11, 3, 12);
     }
   },
 
@@ -1820,6 +2008,9 @@ const ARENAS = {
 
   wolkenkratzer: {
     name: 'Wolkenkratzer', sky: ['#16243f', '#4a6f9e'], ground: '#5e6470', groundDark: '#42474f',
+    /* Zwei Tuerme, dazwischen die Schlucht. Hinueber geht es nur ueber zwei
+       Stahltraeger — und da passen zwei gleichzeitig drauf, nicht mehr. */
+    terrain: { rx: .5, rw: .125, by0: .47, by1: .56, cap: 2 },
     deco(c, W, H, hz, t) {
       /* Stadt tief unter uns */
       for (let i = 0; i < 16; i++) {
@@ -1854,6 +2045,31 @@ const ARENAS = {
       }
       c.fillStyle = '#6a7180';
       for (let x = 20; x < W; x += 120) { c.fillRect(x, H - 18, 5, 18); c.fillRect(x, H - 18, 44, 4); }
+      /* Schlucht zwischen den Tuermen */
+      const T = this.terrain;
+      const gx0 = sxAt(T.rx - T.rw / 2), gx1 = sxAt(T.rx + T.rw / 2);
+      c.fillStyle = '#080b12'; c.fillRect(gx0, hz, gx1 - gx0, H - hz);
+      c.fillStyle = '#141a26'; c.fillRect(gx0 + 6, hz + 14, gx1 - gx0 - 12, H - hz - 14);
+      for (let i = 0; i < 22; i++) {                 /* Lichter tief unten */
+        const lx = gx0 + 10 + ((i * 37) % Math.max(8, gx1 - gx0 - 20));
+        const ly = hz + 22 + ((i * 53) % Math.max(10, H - hz - 30));
+        c.fillStyle = (i % 3) ? '#2a3346' : '#c8a83a'; c.fillRect(lx, ly, 2, 2);
+      }
+      /* Bruestungen der beiden Tuerme */
+      c.fillStyle = '#767d8a'; c.fillRect(gx0 - 9, hz, 9, H - hz); c.fillRect(gx1, hz, 9, H - hz);
+      c.fillStyle = '#4a505b'; c.fillRect(gx0 - 9, hz, 9, 4); c.fillRect(gx1, hz, 9, 4);
+
+      /* Zwei Stahltraeger als Uebergang */
+      const ty0 = syAt(T.by0), ty1 = syAt(T.by1);
+      const bh = Math.max(5, Math.round((ty1 - ty0) / 2));
+      for (const by of [ty0, ty0 + bh]) {
+        c.fillStyle = '#98a0ac'; c.fillRect(gx0 - 14, by, (gx1 - gx0) + 28, bh);
+        c.fillStyle = '#646c79'; c.fillRect(gx0 - 14, by + Math.floor(bh / 2) - 1, (gx1 - gx0) + 28, 2);
+        c.fillStyle = '#c2c9d4'; c.fillRect(gx0 - 14, by, (gx1 - gx0) + 28, 1);
+        c.fillStyle = '#3f4550';
+        for (let x = gx0 - 10; x < gx1 + 14; x += 11) c.fillRect(x, by + 1, 2, 2);
+      }
+
       /* Hubschrauber zieht alle elf Sekunden durch */
       const hp = t % 11;
       if (hp < 6.4) {
@@ -2182,8 +2398,10 @@ const W = 640, H = 360, HZ = 112;
    anschliessend vergrössert aufs sichtbare Canvas geblittet. */
 const scene = document.createElement('canvas'); scene.width = W; scene.height = H;
 const sctx = scene.getContext('2d'); sctx.imageSmoothingEnabled = false;
-const sxOf = u => 40 + u.x * (W - 80);
-const syOf = u => 150 + u.y * 176;
+const sxAt = x => 40 + x * (W - 80);
+const syAt = y => 150 + y * 176;
+const sxOf = u => sxAt(u.x);
+const syOf = u => syAt(u.y);
 /* scOf ist die Skalierung pro ECHTEM Pixel, s24 die pro Design-Einheit */
 const scOf = u => (1.9 + u.y * 1.35) * (u.vis || 1) / R;
 
@@ -2242,7 +2460,7 @@ function drawUnit(u, dx = 0, dy = 0) {
 function drawFx() {
   ctx.textAlign = 'center';
   for (const f of world.fx) {
-    const x = 40 + f.x * (W - 80), y = 150 + f.y * 176;
+    const x = sxAt(f.x), y = syAt(f.y);
     if (f.k === 'dmg') {
       const up = (1 - f.life / .9) * 26;
       ctx.font = (f.crit ? 'bold 15px' : '12px') + ' "Press Start 2P", monospace';
