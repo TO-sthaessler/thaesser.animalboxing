@@ -15,6 +15,7 @@ Dependencies. Doppelklick genügt, oder über GitHub Pages hosten.
 | **50 Gegner** | mit halbwegs echten Werten (Gewicht, Beisskraft, Tempo, Aggression) |
 | **4 Arenen** | Wiese, Dojo, Strand, Parkhaus |
 | **Auto-Battle** | Intro-Animation, HP-Balken, Schadenszahlen, Kampflog, Ergebnis-Screen |
+| **Abschlussbericht** | teilbare Bilanz als Bild und Text, direkt übers Sharesheet |
 | **Comedy-Balancing** | Werte nach Lustigkeit getunt, nicht nach National Geographic |
 
 ## Wie die Sprites entstehen
@@ -148,6 +149,29 @@ F('ole', 'Ole', 'support', {
 
 Nachtunen lässt sich das über `TUNE`, `SWEEP_RATIO`, die Formeln in
 `animalStats()` und den `fun`-Multiplikator pro Tier.
+
+## Abschlussbericht
+
+Nach jedem Kampf gibt es eine Bilanz — als NES-Karte gerendert und als
+Klartext. Drei Buttons auf dem Ergebnis-Screen:
+
+* **Bericht teilen** — öffnet das native Sharesheet (`navigator.share`).
+  Wo das Gerät Dateien unterstützt, geht das Bild mit raus, sonst nur der
+  Text. Ohne Sharesheet fällt es auf die Zwischenablage zurück, und wenn
+  auch die blockiert ist, erscheint der Text in einem Feld zum Markieren.
+* **Bild speichern** — PNG herunterladen
+* **Text kopieren** — Klartext in die Zwischenablage
+
+Das Sharesheet braucht einen sicheren Kontext (HTTPS oder localhost).
+Per Doppelklick aus dem Dateisystem geöffnet greift automatisch der
+Fallback.
+
+Im Bericht stehen: Aufstellung beider Seiten mit Sprites, Ergebnis und
+Dauer, Überlebende mit Rest-HP, Gefallene, erledigte Gegner nach Art,
+Meister Schaden, meiste K.O.s, meiste Prügel eingesteckt, härtester
+Treffer mit Urheber, sowie Angriffe, Gesamtschaden, Schaden pro Sekunde,
+ausgelöste Specials, Krits, Glückstreffer, Fehlschläge, Ausweichmanöver
+und Blocks.
 
 ## Balancing selbst testen
 

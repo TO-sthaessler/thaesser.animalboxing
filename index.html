@@ -84,6 +84,8 @@ button.ghost{background:transparent;color:var(--nes-ink);border-color:var(--nes-
 .hpfill.mid{background:var(--nes-yellow)}
 .hpfill.low{background:var(--nes-red)}
 
+#report-wrap canvas{width:100%;max-width:520px;image-rendering:pixelated;
+  border:3px solid var(--nes-border);box-shadow:0 0 0 3px #000;display:block}
 #log{height:104px;overflow-y:auto;background:#05070d;border:3px solid #3a4870;
   padding:8px;font-size:8px;line-height:1.9;color:var(--nes-dim)}
 #log b{color:var(--nes-ink)}
@@ -998,7 +1000,7 @@ const FIGHTERS = [
     shirt: '#f4f4f6', pants: '#d4bd92', shoe: '#e4e4e8', lens: '#24262f', bagCol: '#1b1b24'
   }),
   F('ole', 'Ole', 'support', {
-    skin: '#f2cba8', hair: '#d4739e', hairStyle: 'buzz', beard: 'moustache',
+    skin: '#f2cba8', hair: '#bf9a62', hairStyle: 'buzz', beard: 'moustache',
     beardCol: '#a87545', glasses: 1, earring: 1, tattoo: 1, shortSleeve: 1, shorts: 1,
     shirt: '#1f6b4a', shirtPat: 'diag', shirt2: '#f0f0f2', shirt3: '#191a1f',
     pants: '#1c1c22', shoe: '#26262e'
@@ -1063,7 +1065,11 @@ function createWorld(teamDefs, enemyList) {
   teamDefs.forEach(d => units.push(makeUnit(d, 0)));
   enemyList.forEach(({ def, n }) => { for (let i = 0; i < n; i++) units.push(makeUnit(def, 1)); });
   layout(units);
-  return { units, t: 0, log: [], fx: [], over: false, winner: null, started: false };
+  return {
+    units, t: 0, log: [], fx: [], over: false, winner: null, started: false,
+    stats: { hits: 0, kos: 0, specials: 0, crit: 0, lucky: 0, miss: 0, dodge: 0, block: 0, dmg: 0,
+             best: { v: 0, by: '', on: '', kind: '' } }
+  };
 }
 
 function layout(units) {
@@ -1100,14 +1106,16 @@ function pickTarget(w, u) {
 
 function applyDamage(w, atk, tgt, raw, tag) {
   let dmg = Math.max(1, Math.round(raw));
+  if (dmg > w.stats.best.v) w.stats.best = { v: dmg, by: atk.name, on: tgt.name, kind: tag };
   let chain = 0, cur = tgt;
   while (cur && chain <= TUNE.cleaveChain) {
     const take = Math.min(dmg, cur.hp);
-    cur.hp -= take; dmg -= take; atk.dealt += take;
+    cur.hp -= take; dmg -= take; atk.dealt += take; cur.taken = (cur.taken || 0) + take;
+    w.stats.dmg += take;
     cur.flash = .09;
     w.fx.push({ k: 'dmg', x: cur.x + (Math.random() - .5) * .03, y: cur.y, v: take, crit: tag === 'crit' || tag === 'special', life: .9 });
     if (cur.hp <= 0) {
-      cur.hp = 0; cur.alive = false; cur.target = null; atk.kills++;
+      cur.hp = 0; cur.alive = false; cur.target = null; atk.kills++; w.stats.kos++;
       w.fx.push({ k: 'poof', x: cur.x, y: cur.y, life: .5 });
       w.log.push({ c: 'ko', s: `${cur.name} ist K.O.!` });
     }
@@ -1139,12 +1147,14 @@ function doAttack(w, u) {
 
   /* Pech: voll danebengehauen */
   if (Math.random() < LUCK.miss * luckMul) {
+    w.stats.miss++;
     w.fx.push({ k: 'txt', x: u.x, y: u.y, s: 'DANEBEN', col: '#8fa3c8', life: .7 });
     if (Math.random() < .25) w.log.push({ c: '', s: `${u.name} haut komplett daneben.` });
     return;
   }
   /* Der Blitz weicht aus */
   if (t.passive === 'flink' && Math.random() < .14) {
+    w.stats.dodge++;
     w.fx.push({ k: 'txt', x: t.x, y: t.y, s: 'AUSGEWICHEN', col: '#3cbcfc', life: .7 });
     if (Math.random() < .3) w.log.push({ c: 'spc', s: `${t.name} weicht ${u.name} aus.` });
     return;
@@ -1152,7 +1162,7 @@ function doAttack(w, u) {
   /* Die Wand blockt */
   let blockMul = 1;
   if (t.passive === 'wand' && Math.random() < .22) {
-    blockMul = .12;
+    blockMul = .12; w.stats.block++;
     w.fx.push({ k: 'txt', x: t.x, y: t.y, s: 'BLOCK', col: '#fcd000', life: .7 });
   }
 
@@ -1172,6 +1182,8 @@ function doAttack(w, u) {
   else if (crit) raw *= pas === 'brecher' ? 2.5 : 1.8;
   else if (lucky) raw *= LUCK.luckyMult;
 
+  w.stats.hits++;
+  if (isSpecial) w.stats.specials++; else if (crit) w.stats.crit++; else if (lucky) w.stats.lucky++;
   applyDamage(w, u, t, raw * defMod(t), isSpecial ? 'special' : (crit || lucky) ? 'crit' : 'hit');
 
   /* Rundumschlag: trifft nur GEGNER, die deutlich kleiner sind als der Angreifer.
@@ -1413,6 +1425,13 @@ app.innerHTML = `
     <h2 id="res-title">K.O.</h2>
     <div class="sub" id="res-sub"></div>
     <div style="margin-top:14px" id="res-stats"></div>
+    <div class="row" style="margin-top:16px;gap:8px">
+      <button class="primary" id="btn-share">Bericht teilen</button>
+      <button class="ghost" id="btn-save">Bild speichern</button>
+      <button class="ghost" id="btn-copy">Text kopieren</button>
+    </div>
+    <div id="toast" style="font-size:8px;color:var(--nes-green);line-height:2;margin-top:8px;min-height:16px"></div>
+    <div id="report-wrap" style="margin-top:12px"></div>
   </div>
   <div class="row spread">
     <button class="ghost" id="btn-rematch">↻ Rematch</button>
@@ -1656,6 +1675,188 @@ function frame(ts) {
   }
 }
 
+/* ============================================================
+   10) ABSCHLUSSBERICHT  (Text + Bild, teilbar übers Sharesheet)
+   ============================================================ */
+function buildReport(w) {
+  const st = w.stats;
+  const team = w.units.filter(u => u.side === 0), foes = w.units.filter(u => u.side === 1);
+  const aliveA = team.filter(u => u.alive), aliveB = foes.filter(u => u.alive);
+  const byDmg = [...w.units].sort((a, b) => b.dealt - a.dealt);
+  const byKill = [...w.units].sort((a, b) => b.kills - a.kills);
+  const tank = [...team].sort((a, b) => (b.taken || 0) - (a.taken || 0))[0];
+
+  /* Gegner nach Art zusammenfassen */
+  const kinds = new Map();
+  foes.forEach(u => {
+    const e = kinds.get(u.name) || { n: 0, down: 0 };
+    e.n++; if (!u.alive) e.down++; kinds.set(u.name, e);
+  });
+
+  return {
+    datum: new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+    arena: ARENAS[arenaKey].name,
+    teamLabel: teamLabel(0), foeLabel: teamLabel(1),
+    sieg: w.winner === 0, unentschieden: w.winner === -1,
+    dauer: w.t.toFixed(1),
+    teamAlive: aliveA.length, teamTotal: team.length,
+    foeAlive: aliveB.length, foeTotal: foes.length,
+    ueberlebende: aliveA.map(u => `${u.name} (${Math.round(u.hp)}/${u.maxHp} HP)`),
+    gefallen: team.filter(u => !u.alive).map(u => u.name),
+    kinds: [...kinds].map(([n, e]) => `${e.down}/${e.n} ${n}`),
+    mvp: byDmg[0], topKill: byKill[0], tank,
+    hits: st.hits, kos: st.kos, dmg: Math.round(st.dmg), specials: st.specials, crit: st.crit,
+    lucky: st.lucky, miss: st.miss, dodge: st.dodge, block: st.block, best: st.best,
+    dps: w.t > 0 ? Math.round(st.dmg / w.t) : 0,
+    team, foes
+  };
+}
+
+function reportText(r) {
+  const L = [];
+  L.push('ANIMAL BOXING — ABSCHLUSSBERICHT');
+  L.push(`${r.datum} · Arena: ${r.arena}`);
+  L.push('');
+  L.push(`${r.teamLabel}`);
+  L.push(`  gegen  ${r.foeLabel}`);
+  L.push('');
+  L.push(r.unentschieden ? 'ERGEBNIS: UNENTSCHIEDEN'
+    : r.sieg ? `ERGEBNIS: TEAM GEWINNT nach ${r.dauer}s`
+             : `ERGEBNIS: TEAM VERLIERT nach ${r.dauer}s`);
+  L.push('');
+  L.push(`Team übrig:    ${r.teamAlive}/${r.teamTotal}`);
+  if (r.ueberlebende.length) L.push('  ' + r.ueberlebende.join(', '));
+  if (r.gefallen.length) L.push('  Gefallen: ' + r.gefallen.join(', '));
+  L.push(`Gegner erledigt: ${r.foeTotal - r.foeAlive}/${r.foeTotal}`);
+  r.kinds.forEach(k => L.push('  ' + k + ' erledigt'));
+  L.push('');
+  L.push(`Meister Schaden:  ${r.mvp.name} (${Math.round(r.mvp.dealt)})`);
+  L.push(`Meiste K.O.s:     ${r.topKill.name} (${r.topKill.kills})`);
+  if (r.tank) L.push(`Meiste Prügel:    ${r.tank.name} (${Math.round(r.tank.taken || 0)} eingesteckt)`);
+  if (r.best.v) L.push(`Härtester Treffer: ${r.best.v} — ${r.best.by} auf ${r.best.on}`);
+  L.push('');
+  L.push(`Angriffe: ${r.hits} · K.O.s beidseitig: ${r.kos} · Schaden: ${r.dmg} (${r.dps}/s)`);
+  L.push(`Specials: ${r.specials} · Krits: ${r.crit} · Glückstreffer: ${r.lucky}`);
+  L.push(`Danebengehauen: ${r.miss} · Ausgewichen: ${r.dodge} · Geblockt: ${r.block}`);
+  L.push('');
+  L.push('Keine Tiere wurden verletzt. Sie sind alle nur Pixel.');
+  return L.join('\n');
+}
+
+function reportCanvas(r) {
+  const W2 = 520, pad = 18;
+  const rows = [
+    ['Dauer', r.dauer + 's'],
+    ['Team übrig', `${r.teamAlive}/${r.teamTotal}`],
+    ['Gegner erledigt', `${r.foeTotal - r.foeAlive}/${r.foeTotal}`],
+    ['Angriffe gelandet', String(r.hits)],
+    ['K.O.s (beide Seiten)', String(r.kos)],
+    ['Schaden gesamt', `${r.dmg}  (${r.dps}/s)`],
+    ['Specials', String(r.specials)],
+    ['Krits / Glück', `${r.crit} / ${r.lucky}`],
+    ['Daneben / Block', `${r.miss} / ${r.block}`]
+  ];
+  const H2 = 226 + rows.length * 17 + 74;
+  const c = document.createElement('canvas');
+  c.width = W2; c.height = H2;
+  const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
+
+  const F1 = n => `${n}px "Press Start 2P", monospace`;
+  const txt = (t, px2, py, size, col, align = 'left') => {
+    x.font = F1(size); x.textAlign = align; x.fillStyle = col; x.fillText(t, px2, py);
+  };
+
+  x.fillStyle = '#141a2e'; x.fillRect(0, 0, W2, H2);
+  x.fillStyle = '#1b2440'; x.fillRect(0, 0, W2, 78);
+  x.fillStyle = '#fcd000'; x.fillRect(0, 76, W2, 2);
+
+  txt('ANIMAL BOXING', W2 / 2, 32, 15, '#fcd000', 'center');
+  txt('ABSCHLUSSBERICHT', W2 / 2, 52, 8, '#8fa3c8', 'center');
+  txt(`${r.datum}  ·  ARENA: ${r.arena.toUpperCase()}`, W2 / 2, 68, 7, '#8fa3c8', 'center');
+
+  /* Aufstellung: Team links, Gegner rechts */
+  const sc = 1.6 / R, rowY = 152;
+  r.team.slice(0, 4).forEach((u, i) => drawSprite(x, u.def, pad + 22 + i * 34, rowY, sc, false, false));
+  const foeKinds = [...new Set(r.foes.map(u => u.def))].slice(0, 4);
+  foeKinds.forEach((d, i) => drawSprite(x, d, W2 - pad - 22 - i * 34, rowY, sc, true, false));
+  txt('VS', W2 / 2, rowY - 14, 11, '#e0403a', 'center');
+
+  const cut = (t, n) => t.length > n ? t.slice(0, n - 1) + '…' : t;
+  txt(cut(r.teamLabel, 26), pad, rowY + 16, 7, '#e8f0ff');
+  txt(cut(r.foeLabel, 26), W2 - pad, rowY + 16, 7, '#e8f0ff', 'right');
+
+  /* Ergebnisbanner */
+  const col = r.unentschieden ? '#fcd000' : r.sieg ? '#58d858' : '#e0403a';
+  const label = r.unentschieden ? 'UNENTSCHIEDEN' : r.sieg ? 'TEAM GEWINNT' : 'TEAM VERLIERT';
+  x.fillStyle = '#0b0f1a'; x.fillRect(pad, rowY + 26, W2 - pad * 2, 30);
+  x.fillStyle = col; x.fillRect(pad, rowY + 26, 4, 30);
+  txt(label, W2 / 2, rowY + 46, 12, col, 'center');
+
+  /* Zahlenblock */
+  let y = rowY + 78;
+  rows.forEach(([k, v], i) => {
+    if (i % 2 === 0) { x.fillStyle = '#19203a'; x.fillRect(pad, y - 11, W2 - pad * 2, 17); }
+    txt(k, pad + 6, y, 7, '#8fa3c8');
+    txt(v, W2 - pad - 6, y, 7, '#e8f0ff', 'right');
+    y += 17;
+  });
+
+  y += 12;
+  txt('MEISTER SCHADEN', pad, y, 7, '#8fa3c8');
+  txt(`${cut(r.mvp.name, 16)}  ${Math.round(r.mvp.dealt)}`, W2 - pad, y, 7, '#fcd000', 'right'); y += 16;
+  txt('MEISTE K.O.s', pad, y, 7, '#8fa3c8');
+  txt(`${cut(r.topKill.name, 16)}  ${r.topKill.kills}`, W2 - pad, y, 7, '#fcd000', 'right'); y += 16;
+  if (r.best.v) {
+    txt('HÄRTESTER TREFFER', pad, y, 7, '#8fa3c8');
+    txt(`${r.best.v}  ${cut(r.best.by, 12)}`, W2 - pad, y, 7, '#fcd000', 'right'); y += 16;
+  }
+  txt('Keine Tiere wurden verletzt. Sie sind alle nur Pixel.', W2 / 2, H2 - 10, 6, '#5b6a8c', 'center');
+  return c;
+}
+
+let lastReport = null;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg;
+  clearTimeout(toast._t); toast._t = setTimeout(() => { t.textContent = ''; }, 4000);
+}
+const reportBlob = cv => new Promise(res => cv.toBlob(res, 'image/png'));
+
+async function shareReport() {
+  if (!lastReport) return;
+  const text = reportText(lastReport);
+  try {
+    const blob = await reportBlob(lastReport.canvas);
+    const file = new File([blob], 'animal-boxing-bericht.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: 'Animal Boxing', text });
+      return;
+    }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  try {
+    if (navigator.share) { await navigator.share({ title: 'Animal Boxing', text }); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  copyReport();
+}
+async function copyReport() {
+  if (!lastReport) return;
+  const text = reportText(lastReport);
+  try { await navigator.clipboard.writeText(text); toast('Bericht in die Zwischenablage kopiert.'); }
+  catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'width:100%;height:180px;font-size:9px;background:#05070d;color:#e8f0ff;border:3px solid #3a4870';
+    $('#report-wrap').prepend(ta); ta.select();
+    toast('Teilen ging nicht — Text steht oben zum Kopieren.');
+  }
+}
+function saveReport() {
+  if (!lastReport) return;
+  const a = document.createElement('a');
+  a.download = 'animal-boxing-bericht.png';
+  a.href = lastReport.canvas.toDataURL('image/png');
+  a.click();
+  toast('Bild gespeichert.');
+}
+
 function showResult() {
   const winner = world.winner;
   const team = world.units.filter(u => u.side === 0), foes = world.units.filter(u => u.side === 1);
@@ -1677,6 +1878,16 @@ function showResult() {
     <div class="statline">Gegner übrig: <b>${alive(1).length}/${foes.length}</b></div>
     <div class="statline">Meister Schaden: <b>${mvp.name}</b> mit ${Math.round(mvp.dealt)} Schaden</div>
     <div class="statline">Meiste K.O.s: <b>${topKill.name}</b> (${topKill.kills})</div>`;
+
+  /* Abschlussbericht bauen und anzeigen */
+  lastReport = buildReport(world);
+  const draw = () => {
+    lastReport.canvas = reportCanvas(lastReport);
+    const wrap = $('#report-wrap'); wrap.innerHTML = ''; wrap.appendChild(lastReport.canvas);
+  };
+  draw();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw).catch(() => {});
+  $('#toast').textContent = '';
   show('scr-result');
 }
 
@@ -1687,6 +1898,9 @@ $('#btn-to-enemy').onclick = () => { updateEnemyHeader(); show('scr-enemy'); };
 $('#btn-back-select').onclick = () => show('scr-select');
 $('#btn-fight').onclick = startBattle;
 $('#btn-abort').onclick = () => { cancelAnimationFrame(raf); phase = 'idle'; show('scr-enemy'); };
+$('#btn-share').onclick = shareReport;
+$('#btn-save').onclick = saveReport;
+$('#btn-copy').onclick = copyReport;
 $('#btn-rematch').onclick = startBattle;
 $('#btn-new').onclick = () => show('scr-select');
 $('#btn-clear-enemies').onclick = () => { enemyCount.clear(); renderEnemyList(); updateEnemyHeader(); };
