@@ -15,6 +15,7 @@ Dependencies. Doppelklick genügt, oder über GitHub Pages hosten.
 | **50 Gegner** | mit halbwegs echten Werten (Gewicht, Beisskraft, Tempo, Aggression) |
 | **8 Arenen** | animiert, mit Vordergrund-Ebene |
 | **Auto-Battle** | Intro-Animation, HP-Balken, Schadenszahlen, Kampflog, Ergebnis-Screen |
+| **Steuerung** | Pause, 1x/2x/4x, Foto — per Button oder Taste |
 | **22 Gegenstände** | jeder Kämpfer bringt einen mit, mit echten Auswirkungen |
 | **Abschlussbericht** | teilbare Bilanz als Bild und Text, direkt übers Sharesheet |
 | **Comedy-Balancing** | Werte nach Lustigkeit getunt, nicht nach National Geographic |
@@ -89,7 +90,7 @@ läuft. Beide bekommen eine Zeitachse, sind also animiert.
 
 | Arena | Was sich bewegt |
 |---|---|
-| **Geisterbahn** | Blitz alle sieben Sekunden mit Nachzucken, flackernde Fenster, schwebende Geister, Fledermäuse, Bodennebel |
+| **Geisterbahn** | Blitz alle vierzehn Sekunden mit Nachzucken, flackernde Fenster, schwebende Geister, Fledermäuse, Bodennebel |
 | **Strand** | anlaufende Wellen, kreisende Möwen mit Flügelschlag, Brandungssaum |
 | **Fußballstadion** | Laola-Welle läuft durch sechs Ränge, Fans reissen die Arme hoch, Flutlichtkegel |
 | **Innenstadt** | Passanten laufen im Vordergrund durchs Bild, Ampel schaltet, Fenster gehen an und aus |
@@ -110,6 +111,14 @@ meinearena: {
 ```
 
 `t` läuft in Sekunden durch und stoppt nie — auch nicht zwischen den Kämpfen.
+
+## Steuerung im Kampf
+
+| | |
+|---|---|
+| **Pause** | Button oder Leertaste. Friert Kampf **und** Arena ein. |
+| **1x / 2x / 4x** | Button oder Taste `1`, `2`, `4` |
+| **Foto** | speichert das aktuelle Bild als PNG — zusammen mit Pause ein Standbild vom besten Moment |
 
 ## Gegenstände
 
