@@ -15,6 +15,7 @@ Dependencies. Doppelklick genügt, oder über GitHub Pages hosten.
 | **50 Gegner** | mit halbwegs echten Werten (Gewicht, Beisskraft, Tempo, Aggression) |
 | **4 Arenen** | Wiese, Dojo, Strand, Parkhaus |
 | **Auto-Battle** | Intro-Animation, HP-Balken, Schadenszahlen, Kampflog, Ergebnis-Screen |
+| **22 Gegenstände** | jeder Kämpfer bringt einen mit, mit echten Auswirkungen |
 | **Abschlussbericht** | teilbare Bilanz als Bild und Text, direkt übers Sharesheet |
 | **Comedy-Balancing** | Werte nach Lustigkeit getunt, nicht nach National Geographic |
 
@@ -79,6 +80,45 @@ Rollen dürfen doppelt vergeben werden.
 
 Unbesetzt geblieben: Fels, Faust, Überlebender — stehen für künftige
 Umbesetzungen bereit.
+
+## Gegenstände
+
+Beim Team-Setup bringt jeder Kämpfer genau einen Gegenstand mit. Sie sind
+keine Deko: die Werte auf der Karte aktualisieren sich sofort, der
+Gegenstand wird im Kampf in der Hand mitgeführt und steht im Bericht.
+
+| Gegenstand | Wirkung |
+|---|---|
+| Bratpfanne | +8 ATK, −2 SPD |
+| Regenschirm | +10 DEF, +10 % Block |
+| Gartenstuhl | +14 DEF, +3 ATK, −4 SPD |
+| Mülltonnendeckel | +12 DEF, +8 % Block |
+| Bauhelm | +8 DEF, +30 HP |
+| Nudelholz | +7 ATK |
+| Bierbank | +13 ATK, +5 DEF, −6 SPD |
+| Wanderstock | +4 ATK, mehr Reichweite |
+| Selfie-Stick | +2 ATK, +3 SPD, viel Reichweite |
+| Laubbläser | +4 SPD, ein Ziel mehr beim Rundumschlag |
+| Fliegenklatsche | +1 ATK, zwei Ziele mehr beim Rundumschlag |
+| Grillzange | +5 ATK, +3 SPD |
+| Schneeschaufel | +7 ATK, +4 DEF, −2 SPD |
+| Klobürste | +2 ATK, +10 % Ausweichen |
+| Gummihuhn | +1 ATK, doppelte Glückschance |
+| Trillerpfeife | das ganze Team macht +10 % Schaden |
+| Stacheldraht-Weste | +4 DEF, 25 % Schaden zurück an den Angreifer |
+| Tiefkühlpizza | +3 ATK, +25 HP |
+| Handtasche | +9 ATK, −1 SPD |
+| Wurfstern aus Pappe | +5 ATK, +12 % Krit |
+| Sprudelkiste | +10 ATK, +3 DEF, −5 SPD |
+| Gartenzwerg | +6 ATK, +6 DEF |
+
+Die schweren Sachen sind ein echter Zielkonflikt: Bierbank und Sprudelkiste
+hauen hart, kosten aber so viel Tempo, dass man gegen einen einzelnen
+grossen Gegner schlechter fährt als mit blanken Fäusten.
+
+Neue Gegenstände kommen in `ITEMS`. Das Feld `mod` versteht `atk`, `def`,
+`spd`, `hp`, `reach`, `sweep`, `block`, `dodge`, `crit`, `luck`, `thorns`
+und `aura`.
 
 ## Glück
 
@@ -202,11 +242,9 @@ fastSim([FIGHTERS[0]], [{ def: ANIMALS.find(a => a.id === 'chihuahua'), n: 20 }]
 
 ## Noch offen
 
-* **Gegenstände zum Verteidigen** (Pfanne, Regenschirm, Gartenstuhl …) — als
-  Modifier auf ATK/DEF/Reichweite gedacht
-* Echte Avatare statt Platzhalter
-* Arena-Auswahl ist gebaut (Dropdown im Gegner-Screen), weitere Arenen sind je
-  ein Eintrag in `ARENAS`
+* Feintuning am Balancing, sobald ihr gespielt habt
+* Weitere Arenen sind je ein Eintrag in `ARENAS`, weitere Gegenstände je
+  einer in `ITEMS`
 
 ---
 

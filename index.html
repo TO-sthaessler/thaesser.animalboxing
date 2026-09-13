@@ -57,6 +57,14 @@ button.ghost{background:transparent;color:var(--nes-ink);border-color:var(--nes-
 .card .tag{font-size:7px;color:var(--nes-dim);text-align:center;line-height:1.6}
 .card canvas{image-rendering:pixelated}
 .card .chk{position:absolute;top:4px;right:6px;font-size:10px;color:var(--nes-yellow);display:none}
+.card .itembox{display:none;flex-direction:column;align-items:center;gap:4px;width:100%;
+  border-top:2px solid #3a4870;padding-top:6px;margin-top:2px}
+.card.sel .itembox{display:flex}
+.card .itembox select{font-family:inherit;font-size:7px;padding:4px;width:100%;
+  background:#0b1120;color:var(--nes-ink);border:2px solid #3a4870}
+.card .icw{height:44px;display:flex;align-items:center;justify-content:center}
+.card .icw canvas{image-rendering:pixelated}
+.card .it-desc{font-size:6px;line-height:1.7;color:var(--nes-green);min-height:12px}
 .card.sel .chk{display:block}
 
 .enemy-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;
@@ -1091,6 +1099,96 @@ const FIGHTERS = [
 ];
 
 /* ============================================================
+   5b) GEGENSTÄNDE
+   Jeder Kämpfer darf beim Setup genau einen mitbringen.
+   mod: atk/def/spd/hp = flach drauf, reach = Reichweite,
+        sweep = zusätzliche Ziele beim Rundumschlag,
+        block/dodge/crit = Zusatzchancen, luck = Glücksfaktor,
+        thorns = Anteil Schaden zurück, aura = Team-Bonus
+   ============================================================ */
+const IG = 14;                                   /* Gegenstände: 14x14 Design-Raster */
+const igrid = () => newGrid(IG * R, IG * R);
+const IP = (main, o = {}) => ({
+  '1': main, '2': o.s || dark(main), '3': o.l || lite(main),
+  '4': '#16161e', '5': o.a || '#d8a030', '9': '#f4f4f8',
+  'o': o.line || dark(main, .75)
+});
+const fin = g => outline(autoShade(g));
+
+const I = (id, name, kurz, mod, pal, art) => ({ id, name, kurz, mod, pal, build: art });
+
+const ITEMS = [
+  I('none', '— nichts —', 'Blanke Fäuste.', {}, IP('#888'), null),
+
+  I('pfanne', 'Bratpfanne', '+8 ATK, −2 SPD. PANG.', { atk: 8, spd: -2 }, IP('#33333c'),
+    () => { const g = igrid(); rect(g, 8.6, 5.2, 5, 1.6, '2'); ell(g, 5.2, 6.4, 4, 3.4, '1'); ell(g, 5.2, 6, 3, 2.4, '2'); return fin(g); }),
+
+  I('schirm', 'Regenschirm', '+10 DEF, +10% Block.', { def: 10, block: .1 }, IP('#2f5fa8'),
+    () => { const g = igrid(); ell(g, 7, 7, 5.4, 4.4, '1'); rect(g, 0, 7.2, IG, 7, '.'); for (let i = -4; i <= 4; i += 2) lineTo(g, 7, 2.6, 7 + i, 7, '2'); rect(g, 6.5, 6.8, 1, 5.4, '2'); rect(g, 5, 11.6, 2.4, 1, '2'); return fin(g); }),
+
+  I('stuhl', 'Gartenstuhl', '+14 DEF, +3 ATK, −4 SPD.', { def: 14, atk: 3, spd: -4 }, IP('#c8c4b8'),
+    () => { const g = igrid(); rect(g, 2.6, 2, 1.6, 6, '2'); rect(g, 2.6, 6.6, 8.8, 1.6, '1'); rect(g, 3.4, 8.2, 1.2, 3.6, '2'); rect(g, 9.6, 8.2, 1.2, 3.6, '2'); for (let y = 2.4; y < 6; y += 1.6) rect(g, 4.2, y, 6, .8, '1'); return fin(g); }),
+
+  I('deckel', 'Mülltonnendeckel', '+12 DEF, +8% Block.', { def: 12, block: .08 }, IP('#5a6470'),
+    () => { const g = igrid(); ell(g, 7, 7, 5.2, 4.8, '1'); ell(g, 7, 7, 3.6, 3.2, '2'); rect(g, 5.8, 5.4, 2.4, 1.8, '3'); return fin(g); }),
+
+  I('helm', 'Bauhelm', '+8 DEF, +30 HP.', { def: 8, hp: 30 }, IP('#e8b020'),
+    () => { const g = igrid(); ell(g, 7, 7, 4.2, 3.6, '1'); rect(g, 2.2, 6.6, 9.6, 1.4, '1'); rect(g, 6.4, 3.2, 1.2, 2.4, '2'); return fin(g); }),
+
+  I('nudelholz', 'Nudelholz', '+7 ATK.', { atk: 7 }, IP('#c89a5e'),
+    () => { const g = igrid(); rect(g, 3.4, 5.8, 7.2, 2.8, '1'); rect(g, 1.2, 6.6, 2.2, 1.2, '2'); rect(g, 10.6, 6.6, 2.2, 1.2, '2'); return fin(g); }),
+
+  I('bierbank', 'Bierbank', '+13 ATK, +5 DEF, −6 SPD.', { atk: 13, def: 5, spd: -6 }, IP('#9a6a34'),
+    () => { const g = igrid(); rect(g, .8, 4.6, 12.4, 1.8, '1'); rect(g, 2.6, 6.4, 1.4, 4.6, '2'); rect(g, 9.8, 6.4, 1.4, 4.6, '2'); rect(g, .8, 3.4, 12.4, 1.2, '3'); return fin(g); }),
+
+  I('wanderstock', 'Wanderstock', '+4 ATK, mehr Reichweite.', { atk: 4, reach: .022 }, IP('#8a6a42'),
+    () => { const g = igrid(); lineTo(g, 3.4, 12, 9.6, 2.4, '1', 1.6); ell(g, 9.8, 2, 1.4, 1.4, '2'); rect(g, 6, 6.6, 2.6, .8, '5'); return fin(g); }),
+
+  I('selfie', 'Selfie-Stick', '+2 ATK, +3 SPD, viel Reichweite.', { atk: 2, spd: 3, reach: .034 }, IP('#8a8f9a'),
+    () => { const g = igrid(); lineTo(g, 2.6, 12, 8.6, 5.4, '1', 1.2); rect(g, 8.2, 2.2, 3.6, 4.2, '2'); rect(g, 8.7, 2.8, 2.6, 3, '3'); return fin(g); }),
+
+  I('laubblaeser', 'Laubbläser', '+4 SPD, ein Ziel mehr beim Rundumschlag.', { spd: 4, sweep: 1 }, IP('#d8541e'),
+    () => { const g = igrid(); ell(g, 4.6, 6.2, 3.2, 2.6, '1'); rect(g, 7.2, 5.4, 5.4, 1.8, '2'); rect(g, 11.4, 4.8, 1.6, 3, '3'); rect(g, 3.6, 8.4, 2, 2.6, '2'); return fin(g); }),
+
+  I('klatsche', 'Fliegenklatsche', '+1 ATK, zwei Ziele mehr beim Rundumschlag.', { atk: 1, sweep: 2 }, IP('#d83a6a'),
+    () => { const g = igrid(); rect(g, 3.4, 1.8, 7.2, 5.4, '1'); for (let y = 2.6; y < 7; y += 1.4) for (let x = 4.2; x < 10; x += 1.4) px(g, x, y, '2'); lineTo(g, 7, 7.2, 7, 12.4, '2', 1.2); return fin(g); }),
+
+  I('zange', 'Grillzange', '+5 ATK, +3 SPD.', { atk: 5, spd: 3 }, IP('#9aa0aa'),
+    () => { const g = igrid(); lineTo(g, 2.6, 11.4, 10.6, 2.6, '1', 1.2); lineTo(g, 4.6, 11.6, 11.6, 4.6, '1', 1.2); ell(g, 3.2, 11.6, 1.2, 1.2, '2'); return fin(g); }),
+
+  I('schaufel', 'Schneeschaufel', '+7 ATK, +4 DEF, −2 SPD.', { atk: 7, def: 4, spd: -2 }, IP('#4a7fc8'),
+    () => { const g = igrid(); rect(g, 2.6, 1.8, 8.8, 4.4, '1'); rect(g, 2.6, 5.6, 8.8, .8, '3'); lineTo(g, 7, 6.2, 7, 12.4, '2', 1.4); return fin(g); }),
+
+  I('klobuerste', 'Klobürste', '+2 ATK, +10% Ausweichen. Keiner will nah ran.', { atk: 2, dodge: .1 }, IP('#e8e8ee'),
+    () => { const g = igrid(); rect(g, 6.2, 1.6, 1.6, 7, '2'); ell(g, 7, 10.2, 2.8, 2.4, '1'); for (let i = 0; i < 8; i++) { const a = Math.PI * i / 7; px(g, 7 + Math.cos(a) * 3.4, 10.2 + Math.sin(a) * 3, '1'); } return fin(g); }),
+
+  I('gummihuhn', 'Gummihuhn', '+1 ATK, doppelte Glückschance.', { atk: 1, luck: 2 }, IP('#f0d020', { a: '#e04030' }),
+    () => { const g = igrid(); ell(g, 5.6, 8, 3.4, 2.8, '1'); ell(g, 8.8, 5, 2.2, 2, '1'); tri(g, 10.4, 4.6, 13, 5.2, 10.4, 5.8, '5'); ell(g, 8.2, 3.2, 1, 1.2, '5'); lineTo(g, 5, 10.6, 4.6, 12.4, '5'); lineTo(g, 6.6, 10.6, 6.8, 12.4, '5'); px(g, 9.4, 4.6, '4'); return fin(g); }),
+
+  I('pfeife', 'Trillerpfeife', 'Das ganze Team macht +10% Schaden.', { aura: .1 }, IP('#c8c8d0'),
+    () => { const g = igrid(); ell(g, 5.4, 7.4, 3.2, 2.8, '1'); rect(g, 7.6, 6.4, 4.6, 1.8, '1'); ell(g, 4.6, 6.2, 1.2, 1, '3'); rect(g, 11.4, 6.2, 1.4, .8, '2'); px(g, 5.4, 5, '4'); return fin(g); }),
+
+  I('stacheldraht', 'Stacheldraht-Weste', '+4 DEF, 25% Schaden zurück.', { def: 4, thorns: .25 }, IP('#7a5a3a'),
+    () => { const g = igrid(); rect(g, 3.6, 2.6, 6.8, 8.4, '1'); rect(g, 6.2, 2.6, 1.6, 8.4, '2'); for (let i = 0; i < 7; i++) { const y = 3 + i * 1.3; tri(g, 3.6, y, 1.4, y + .6, 3.6, y + 1, '9'); tri(g, 10.4, y, 12.6, y + .6, 10.4, y + 1, '9'); } return fin(g); }),
+
+  I('pizza', 'Tiefkühlpizza', '+3 ATK, +25 HP. Man kann sie auch essen.', { atk: 3, hp: 25 }, IP('#d8a858', { a: '#c03a2a' }),
+    () => { const g = igrid(); rect(g, 2.2, 3.2, 9.6, 7.4, '1'); rect(g, 3.2, 4.2, 7.6, 5.4, '2'); for (const [x, y] of [[4.6, 5.4], [7.4, 5], [9, 6.6], [5.4, 7.8], [8.2, 8.2]]) ell(g, x, y, .9, .8, '5'); return fin(g); }),
+
+  I('handtasche', 'Handtasche', '+9 ATK, −1 SPD. Der Schwung macht es.', { atk: 9, spd: -1 }, IP('#a8344a'),
+    () => { const g = igrid(); rect(g, 3.2, 5.4, 7.6, 5.6, '1'); for (let i = 0; i <= 10; i++) { const a = Math.PI * i / 10; px(g, 7 - Math.cos(a) * 2.6, 5.4 - Math.sin(a) * 3, '2'); } rect(g, 6.2, 6.4, 1.6, 1.4, '5'); return fin(g); }),
+
+  I('wurfstern', 'Wurfstern aus Pappe', '+5 ATK, +12% Krit.', { atk: 5, crit: .12 }, IP('#c8a46a'),
+    () => { const g = igrid(); for (let i = 0; i < 4; i++) { const a = Math.PI / 2 * i; tri(g, 7 + Math.cos(a) * 5.6, 7 + Math.sin(a) * 5.6, 7 + Math.cos(a + 2.2) * 2.2, 7 + Math.sin(a + 2.2) * 2.2, 7 + Math.cos(a - 2.2) * 2.2, 7 + Math.sin(a - 2.2) * 2.2, '1'); } ell(g, 7, 7, 1.2, 1.2, '2'); return fin(g); }),
+
+  I('sprudel', 'Sprudelkiste', '+10 ATK, +3 DEF, −5 SPD.', { atk: 10, def: 3, spd: -5 }, IP('#3a8fb8'),
+    () => { const g = igrid(); rect(g, 2.4, 4.4, 9.2, 6.6, '1'); for (let x = 3.4; x < 11; x += 2.6) for (let y = 5.2; y < 10; y += 2.6) ell(g, x, y, 1, 1.1, '2'); rect(g, 2.4, 4.4, 9.2, .9, '3'); return fin(g); }),
+
+  I('gartenzwerg', 'Gartenzwerg', '+6 ATK, +6 DEF. Er guckt so.', { atk: 6, def: 6 }, IP('#c8443a'),
+    () => { const g = igrid(); tri(g, 4.2, 6, 7, 1.4, 9.8, 6, '1'); ell(g, 7, 7.4, 2.4, 2, '3'); ell(g, 7, 10, 3, 2.4, '9'); px(g, 6.2, 7.2, '4'); px(g, 7.8, 7.2, '4'); ell(g, 7, 8.6, 1.6, 1.2, '9'); return fin(g); })
+];
+const ITEM_BY_ID = id => ITEMS.find(i => i.id === id) || ITEMS[0];
+
+/* ============================================================
    6) KAMPF-MATHEMATIK
    ============================================================ */
 const TUNE = { mitig: 22, cleaveChain: 3, baseRate: 0.048 };
@@ -1124,12 +1222,16 @@ function engageSlots(target, attacker) {
 const mitigate = (atk, df) => atk * (1 - df / (df + TUNE.mitig));
 
 let _uid = 0;
-function makeUnit(def, side, srcKg) {
+function makeUnit(def, side, itemId) {
   const s = statsOf(def);
+  const item = ITEM_BY_ID(itemId), m = item.mod || {};
   return {
+    item, im: m,
     uid: ++_uid, name: def.name, side, def, src: def, human: !!def.human,
     size: sizeOf(def), vis: visOf(def), passive: def.passive || null,
-    maxHp: s.hp, hp: s.hp, atk: s.atk, dfn: s.def, spd: s.spd,
+    maxHp: s.hp + (m.hp || 0), hp: s.hp + (m.hp || 0),
+    atk: s.atk + (m.atk || 0), dfn: s.def + (m.def || 0),
+    spd: Math.max(3, s.spd + (m.spd || 0)),
     x: 0, y: 0, tx: 0, ty: 0, target: null, cd: Math.random() * .6,
     alive: true, flash: 0, bob: Math.random() * 6.28, lunge: 0, kills: 0, dealt: 0
   };
@@ -1138,7 +1240,7 @@ function makeUnit(def, side, srcKg) {
 /* Eine Kampfwelt. renderloses Steppen ist möglich -> Balancing-Tests. */
 function createWorld(teamDefs, enemyList) {
   const units = [];
-  teamDefs.forEach(d => units.push(makeUnit(d, 0)));
+  teamDefs.forEach(d => units.push(makeUnit(d.def || d, 0, d.item)));
   enemyList.forEach(({ def, n }) => { for (let i = 0; i < n; i++) units.push(makeUnit(def, 1)); });
   layout(units);
   return {
@@ -1209,9 +1311,11 @@ const defMod = o => o.passive === 'zaeh' ? .82 : 1;
 /* Der Schreihals buffed Verbündete in der Nähe */
 function supportAura(w, u) {
   let m = 1;
-  for (const o of w.units)
-    if (o.alive && o !== u && o.side === u.side && o.passive === 'support' &&
-        Math.hypot(o.x - u.x, (o.y - u.y) * .4) < .2) m += .14;
+  for (const o of w.units) {
+    if (!o.alive || o === u || o.side !== u.side) continue;
+    if (o.im.aura) m += o.im.aura;                       /* Trillerpfeife wirkt teamweit */
+    if (o.passive === 'support' && Math.hypot(o.x - u.x, (o.y - u.y) * .4) < .2) m += .14;
+  }
   return m;
 }
 
@@ -1229,7 +1333,8 @@ function doAttack(w, u) {
     return;
   }
   /* Der Blitz weicht aus */
-  if (t.passive === 'flink' && Math.random() < .14) {
+  const dodgeCh = (t.passive === 'flink' ? .14 : 0) + (t.im.dodge || 0);
+  if (dodgeCh > 0 && Math.random() < dodgeCh) {
     w.stats.dodge++;
     w.fx.push({ k: 'txt', x: t.x, y: t.y, s: 'AUSGEWICHEN', col: '#3cbcfc', life: .7 });
     if (Math.random() < .3) w.log.push({ c: 'spc', s: `${t.name} weicht ${u.name} aus.` });
@@ -1237,16 +1342,17 @@ function doAttack(w, u) {
   }
   /* Die Wand blockt */
   let blockMul = 1;
-  if (t.passive === 'wand' && Math.random() < .22) {
+  const blockCh = (t.passive === 'wand' ? .22 : 0) + (t.im.block || 0);
+  if (blockCh > 0 && Math.random() < blockCh) {
     blockMul = .12; w.stats.block++;
     w.fx.push({ k: 'txt', x: t.x, y: t.y, s: 'BLOCK', col: '#fcd000', life: .7 });
   }
 
   const sp = u.def.special;
   const isSpecial = sp && Math.random() < sp.c;
-  const critChance = pas === 'taktiker' ? .26 : .1;
+  const critChance = (pas === 'taktiker' ? .26 : .1) + (u.im.crit || 0);
   const crit = !isSpecial && Math.random() < critChance;
-  const lucky = !isSpecial && !crit && Math.random() < LUCK.lucky * luckMul;
+  const lucky = !isSpecial && !crit && Math.random() < LUCK.lucky * luckMul * (u.im.luck || 1);
 
   let atkVal = u.atk * supportAura(w, u);
   if (pas === 'comeback') atkVal *= 1 + (1 - u.hp / u.maxHp) * .9;
@@ -1269,12 +1375,18 @@ function doAttack(w, u) {
   if (t.size < sweepMax) {
     const tiny = t.size < .35 * u.size;
     const bonus = pas === 'sweeper' ? 1 : 0, reach = pas === 'sweeper' ? 1.6 : 1;
-    const many = (tiny ? 3 : 2) + bonus, mult = tiny ? 1 : .6;
+    const many = (tiny ? 3 : 2) + bonus + (u.im.sweep || 0), mult = tiny ? 1 : .6;
     enemiesOf(w, u)
       .filter(o => o !== t && o.size < sweepMax &&
         Math.hypot(o.x - u.x, (o.y - u.y) * .35) < (.05 + (u.size + o.size) * .009) * reach)
       .slice(0, many)
       .forEach(o => applyDamage(w, u, o, raw * mult * defMod(o), 'sweep'));
+  }
+
+  /* Stacheldraht-Weste: ein Teil kommt zurück */
+  if (t.im.thorns && t.alive) {
+    applyDamage(w, t, u, raw * t.im.thorns, 'thorns');
+    if (Math.random() < .15) w.log.push({ c: 'spc', s: `${u.name} greift ${t.name} an und tut sich selbst weh.` });
   }
 
   if (isSpecial) w.log.push({ c: 'spc', s: `★ ${sp.n}: ` + sp.t.replace(/\$A/g, u.name).replace(/\$B/g, t.name) });
@@ -1296,7 +1408,7 @@ function step(w, dt) {
     const t = u.target; if (!t) { u.waiting = false; continue; }
     const dx = t.x - u.x, dy = t.y - u.y;
     const dist = Math.hypot(dx, dy * .4) || 1e-6;
-    const reach = .034 + (u.size + t.size) * .0065 + (u.waiting ? .02 : 0);
+    const reach = .034 + (u.size + t.size) * .0065 + (u.im.reach || 0) + (u.waiting ? .02 : 0);
     u._reach = reach;
     if (dist > reach) {
       const v = (0.10 + u.spd * 0.013) * dt;
@@ -1529,7 +1641,7 @@ function thumb(def, scale = 3) {
 }
 
 /* --- Team-Auswahl --- */
-const picked = new Set();
+const picked = new Map();   /* Kämpfer-ID -> Gegenstand-ID */
 function buildFighterGrid() {
   const g = $('#fighter-grid'); g.innerHTML = '';
   FIGHTERS.forEach(f => {
@@ -1539,10 +1651,32 @@ function buildFighterGrid() {
     d.innerHTML = `<div class="chk">✔</div><div class="nm">${f.name}</div>
       <div class="tag" style="color:var(--nes-yellow)">${f.tag}</div>
       <div class="tag">${f.kurz}</div>
-      <div class="tag">HP ${s.hp} · ATK ${s.atk}<br>DEF ${s.def} · SPD ${s.spd}</div>`;
+      <div class="tag st">HP ${s.hp} · ATK ${s.atk}<br>DEF ${s.def} · SPD ${s.spd}</div>
+      <div class="itembox">
+        <div class="icw"></div>
+        <select class="item-pick">${ITEMS.map(i => `<option value="${i.id}">${i.name}</option>`).join('')}</select>
+        <div class="tag it-desc"></div>
+      </div>`;
     d.insertBefore(thumb(f, 3), d.children[1]);
+
+    const sel = d.querySelector('.item-pick'), icw = d.querySelector('.icw'),
+          desc = d.querySelector('.it-desc'), st = d.querySelector('.st');
+    const paintItem = () => {
+      const it = ITEM_BY_ID(sel.value), m = it.mod || {};
+      icw.innerHTML = ''; if (it.build) icw.appendChild(thumb(it, 3));
+      desc.textContent = it.kurz;
+      if (picked.has(f.id)) picked.set(f.id, it.id);
+      /* Werte inklusive Gegenstand anzeigen */
+      const mark = (base, add) => add ? `<span style="color:${add > 0 ? 'var(--nes-green)' : 'var(--nes-red)'}">${base + add}</span>` : base;
+      st.innerHTML = `HP ${mark(s.hp, m.hp || 0)} · ATK ${mark(s.atk, m.atk || 0)}<br>` +
+                     `DEF ${mark(s.def, m.def || 0)} · SPD ${mark(s.spd, m.spd || 0)}`;
+    };
+    sel.onclick = e => e.stopPropagation();
+    sel.onchange = e => { e.stopPropagation(); paintItem(); };
+    paintItem();
+
     d.onclick = () => {
-      picked.has(f.id) ? picked.delete(f.id) : picked.add(f.id);
+      if (picked.has(f.id)) picked.delete(f.id); else picked.set(f.id, sel.value);
       d.classList.toggle('sel', picked.has(f.id));
       $('#sel-count').textContent = picked.size + ' ausgewählt';
       $('#btn-to-enemy').disabled = picked.size === 0;
@@ -1628,6 +1762,12 @@ function drawUnit(u, dx = 0) {
     drawSprite(ctx, u.def, x + lean, y, s, u.side === 1, true);
     ctx.globalAlpha = 1;
   }
+  /* mitgebrachter Gegenstand in der Hand */
+  if (u.item && u.item.build) {
+    const dir = u.side === 0 ? 1 : -1;
+    drawSprite(ctx, u.item, x + lean + dir * 5.6 * s24, y - 6.2 * s24, s * .68, u.side === 1, false);
+  }
+
   /* Mini-HP */
   const spr = getSprite(u.def);
   const bw = Math.max(10, Math.round(18 * s24 * .5)), bx = Math.round(x - bw / 2);
@@ -1675,13 +1815,13 @@ function banner(txt, sub, col) {
 let world = null, phase = 'idle', pt = 0, speed = 1, raf = 0, logIdx = 0, lastTs = 0;
 
 function teamLabel(side) {
-  if (side === 0) return [...picked].map(id => FIGHTERS.find(f => f.id === id).name).join(' + ');
+  if (side === 0) return [...picked.keys()].map(id => FIGHTERS.find(f => f.id === id).name).join(' + ');
   const parts = []; enemyCount.forEach((n, id) => parts.push(n + '× ' + ANIMALS.find(a => a.id === id).name));
   return parts.join(' + ');
 }
 
 function startBattle() {
-  const team = [...picked].map(id => FIGHTERS.find(f => f.id === id));
+  const team = [...picked].map(([id, item]) => ({ def: FIGHTERS.find(f => f.id === id), item }));
   const foes = []; enemyCount.forEach((n, id) => foes.push({ def: ANIMALS.find(a => a.id === id), n }));
   world = createWorld(team, foes);
   phase = 'intro'; pt = 0; logIdx = 0; lastTs = 0;
@@ -1729,7 +1869,12 @@ function frame(ts) {
     units.forEach(u => drawUnit(u, (u.side === 0 ? -1 : 1) * (1 - e) * 340));
     if (pt > .5 && pt < 1.9) banner('VS', teamLabel(0).slice(0, 28) + '  —  ' + teamLabel(1).slice(0, 28), '#fcd000');
     if (pt >= 1.9) banner('FIGHT!', '', '#e0403a');
-    if (pt > 2.5) { phase = 'fight'; world.log.push({ c: 'hit', s: 'KAMPF!' }); }
+    if (pt > 2.5) {
+      phase = 'fight';
+      world.units.filter(u => u.side === 0 && u.item && u.item.id !== 'none')
+        .forEach(u => world.log.push({ c: 'spc', s: `${u.name} bringt ${u.item.name === 'Bierbank' ? 'eine' : 'einen'} ${u.item.name} mit.` }));
+      world.log.push({ c: 'hit', s: 'KAMPF!' });
+    }
     return;
   }
 
@@ -1780,6 +1925,7 @@ function buildReport(w) {
     ueberlebende: aliveA.map(u => `${u.name} (${Math.round(u.hp)}/${u.maxHp} HP)`),
     gefallen: team.filter(u => !u.alive).map(u => u.name),
     kinds: [...kinds].map(([n, e]) => `${e.down}/${e.n} ${n}`),
+    ausruestung: team.filter(u => u.item && u.item.id !== 'none').map(u => `${u.name}: ${u.item.name}`),
     mvp: byDmg[0], topKill: byKill[0], tank,
     hits: st.hits, kos: st.kos, dmg: Math.round(st.dmg), specials: st.specials, crit: st.crit,
     lucky: st.lucky, miss: st.miss, dodge: st.dodge, block: st.block, best: st.best,
@@ -1805,6 +1951,7 @@ function reportText(r) {
   if (r.gefallen.length) L.push('  Gefallen: ' + r.gefallen.join(', '));
   L.push(`Gegner erledigt: ${r.foeTotal - r.foeAlive}/${r.foeTotal}`);
   r.kinds.forEach(k => L.push('  ' + k + ' erledigt'));
+  if (r.ausruestung.length) { L.push(''); L.push('Ausrüstung:'); r.ausruestung.forEach(a => L.push('  ' + a)); }
   L.push('');
   L.push(`Meister Schaden:  ${r.mvp.name} (${Math.round(r.mvp.dealt)})`);
   L.push(`Meiste K.O.s:     ${r.topKill.name} (${r.topKill.kills})`);
@@ -1832,7 +1979,7 @@ function reportCanvas(r) {
     ['Krits / Glück', `${r.crit} / ${r.lucky}`],
     ['Daneben / Block', `${r.miss} / ${r.block}`]
   ];
-  const H2 = 226 + rows.length * 17 + 74;
+  const H2 = 226 + rows.length * 17 + 82 + (r.ausruestung.length ? Math.min(4, r.ausruestung.length) * 15 + 8 : 0);
   const c = document.createElement('canvas');
   c.width = W2; c.height = H2;
   const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
@@ -1882,6 +2029,14 @@ function reportCanvas(r) {
   txt(`${cut(r.mvp.name, 16)}  ${Math.round(r.mvp.dealt)}`, W2 - pad, y, 7, '#fcd000', 'right'); y += 16;
   txt('MEISTE K.O.s', pad, y, 7, '#8fa3c8');
   txt(`${cut(r.topKill.name, 16)}  ${r.topKill.kills}`, W2 - pad, y, 7, '#fcd000', 'right'); y += 16;
+  if (r.ausruestung.length) {
+    y += 4;
+    r.ausruestung.slice(0, 4).forEach((a, i) => {
+      txt(i === 0 ? 'AUSRÜSTUNG' : '', pad, y, 7, '#8fa3c8');
+      txt(cut(a, 32), W2 - pad, y, 7, '#e8f0ff', 'right'); y += 15;
+    });
+    y += 4;
+  }
   if (r.best.v) {
     txt('HÄRTESTER TREFFER', pad, y, 7, '#8fa3c8');
     txt(`${r.best.v}  ${cut(r.best.by, 12)}`, W2 - pad, y, 7, '#fcd000', 'right'); y += 16;
