@@ -16,6 +16,8 @@ Dependencies. Doppelklick genügt, oder über GitHub Pages hosten.
 | **8 Arenen** | animiert, mit Vordergrund-Ebene |
 | **Auto-Battle** | Intro-Animation, HP-Balken, Schadenszahlen, Kampflog, Ergebnis-Screen |
 | **Steuerung** | Pause, 1x/2x/4x, Foto — per Button oder Taste |
+| **8-Bit-Sound** | komplett per WebAudio erzeugt, keine Dateien |
+| **Zeitlupe** | der letzte K.O. läuft auf ein Fünftel, Kamera fährt rein |
 | **22 Gegenstände** | jeder Kämpfer bringt einen mit, mit echten Auswirkungen |
 | **Abschlussbericht** | teilbare Bilanz als Bild und Text, direkt übers Sharesheet |
 | **Comedy-Balancing** | Werte nach Lustigkeit getunt, nicht nach National Geographic |
@@ -119,6 +121,37 @@ meinearena: {
 | **Pause** | Button oder Leertaste. Friert Kampf **und** Arena ein. |
 | **1x / 2x / 4x** | Button oder Taste `1`, `2`, `4` |
 | **Foto** | speichert das aktuelle Bild als PNG — zusammen mit Pause ein Standbild vom besten Moment |
+
+## Sound
+
+Alle Geräusche werden zur Laufzeit per WebAudio synthetisiert — Rechteck-
+und Dreieckwellen plus gefiltertes Rauschen. Keine Audiodateien, die Seite
+bleibt eine einzelne HTML.
+
+Treffer, kritische Treffer, Specials, Blocks, Ausweichen, Fehlschläge,
+K.O.s, Kampfstart, Sieg, Niederlage und ein Klick auf jedem Button. Die
+Tonhöhe eines Treffers sinkt mit dem Schaden, und Treffer sind auf einen
+alle 45 ms gedrosselt, damit ein Schwarm nicht in Krach ausartet.
+
+Wichtig für die Architektur: **die Kampfschleife macht selbst keine
+Geräusche.** Der Ton hängt an den Effekten, die sie erzeugt
+(`sfxFromFx()`). Dadurch bleibt `fastSim()` lautlos und kann weiter
+tausende Kämpfe in Sekunden durchrechnen.
+
+Der Ton-Button steht in der Kampfleiste, die Einstellung überlebt in
+`localStorage`. Der AudioContext wird erst beim ersten Klick geöffnet,
+weil Browser ihn sonst blockieren.
+
+## Zeitlupe
+
+Wenn der letzte Gegner fällt, schaltet das Spiel in die Phase `slowmo`:
+Zeit auf ein Fünftel, Kamera fährt anderthalb Sekunden lang auf den Ort
+des letzten K.O. zu, dazu eine Vignette. Danach erst kommt das K.O.-Banner.
+
+Technisch wird die Szene in dieser Phase in einen Offscreen-Puffer
+gezeichnet und vergrössert aufs sichtbare Canvas geblittet. Der Fokuspunkt
+wird so begrenzt, dass das vergrösserte Bild das Canvas immer noch füllt.
+Bildglättung bleibt aus, die Pixel werden also grob statt matschig.
 
 ## Gegenstände
 

@@ -1298,9 +1298,11 @@ function applyDamage(w, atk, tgt, raw, tag) {
     cur.hp -= take; dmg -= take; atk.dealt += take; cur.taken = (cur.taken || 0) + take;
     w.stats.dmg += take;
     cur.flash = .09;
-    w.fx.push({ k: 'dmg', x: cur.x + (Math.random() - .5) * .03, y: cur.y, v: take, crit: tag === 'crit' || tag === 'special', life: .9 });
+    w.fx.push({ k: 'dmg', x: cur.x + (Math.random() - .5) * .03, y: cur.y, v: take,
+                crit: tag === 'crit' || tag === 'special', sp: tag === 'special', life: .9 });
     if (cur.hp <= 0) {
       cur.hp = 0; cur.alive = false; cur.target = null; atk.kills++; w.stats.kos++;
+      w.lastKO = { x: cur.x, y: cur.y };
       w.fx.push({ k: 'poof', x: cur.x, y: cur.y, life: .5 });
       w.log.push({ c: 'ko', s: `${cur.name} ist K.O.!` });
     }
@@ -1491,6 +1493,87 @@ function fastSim(teamDefs, enemyList, maxT = 180) {
   return w;
 }
 window.fastSim = fastSim; window.ANIMALS = ANIMALS; window.FIGHTERS = FIGHTERS;
+
+/* ============================================================
+   6b) SOUND
+   Alles per WebAudio erzeugt — keine Dateien, die Seite bleibt
+   eine einzelne HTML. Der AudioContext wird erst beim ersten
+   Klick geöffnet, sonst blockt ihn der Browser.
+   ============================================================ */
+const SFX = (() => {
+  let ac = null, master = null, noiseBuf = null;
+  let muted = false;
+  try { muted = localStorage.getItem('ab_mute') === '1'; } catch (e) {}
+  let lastHit = 0;
+
+  function ctx() {
+    if (!ac) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ac = new AC();
+      master = ac.createGain(); master.gain.value = .2; master.connect(ac.destination);
+      const n = ac.sampleRate * .3;
+      noiseBuf = ac.createBuffer(1, n, ac.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    }
+    if (ac.state === 'suspended') ac.resume();
+    return ac;
+  }
+
+  function tone(freq, dur, type = 'square', vol = 1, slideTo = 0, delay = 0) {
+    if (muted) return; const a = ctx(); if (!a) return;
+    const t0 = a.currentTime + delay;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t0);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(30, slideTo), t0 + dur);
+    g.gain.setValueAtTime(.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + .006);
+    g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+    o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + dur + .03);
+  }
+  function noise(dur, vol = 1, cut = 1600, delay = 0) {
+    if (muted) return; const a = ctx(); if (!a) return;
+    const t0 = a.currentTime + delay;
+    const src = a.createBufferSource(); src.buffer = noiseBuf;
+    const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(cut, t0);
+    const g = a.createGain();
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+    src.connect(f); f.connect(g); g.connect(master); src.start(t0); src.stop(t0 + dur + .02);
+  }
+
+  return {
+    get muted() { return muted; },
+    toggle() {
+      muted = !muted;
+      try { localStorage.setItem('ab_mute', muted ? '1' : '0'); } catch (e) {}
+      if (!muted) { const a = ctx(); if (a) tone(880, .07, 'square', .5); }
+      return muted;
+    },
+    /* Treffer: Tonhöhe sinkt mit dem Schaden, gedrosselt damit ein
+       Schwarm nicht in Krach ausartet */
+    hit(dmg) {
+      const a = ctx(); if (!a) return;
+      if (a.currentTime - lastHit < .045) return;
+      lastHit = a.currentTime;
+      const f = 300 - Math.min(180, dmg * 3.2);
+      tone(f + 120, .06, 'square', .5, f * .6);
+      noise(.05, .25, 2400);
+    },
+    crit() { tone(520, .05, 'square', .55, 300); tone(880, .1, 'square', .5, 520, .05); noise(.09, .4, 3200); },
+    special() { [660, 830, 990, 1320].forEach((f, i) => tone(f, .08, 'square', .45, 0, i * .05)); },
+    block() { tone(1400, .04, 'square', .4); tone(900, .05, 'square', .3, 600, .04); },
+    dodge() { tone(1200, .07, 'sine', .35, 2000); },
+    miss() { tone(140, .1, 'triangle', .35, 80); },
+    ko() { tone(320, .26, 'square', .5, 70); noise(.22, .35, 900, .02); },
+    fight() { [440, 587, 880].forEach((f, i) => tone(f, .12, 'square', .5, 0, i * .1)); },
+    win() { [523, 659, 784, 1047, 1047].forEach((f, i) => tone(f, i === 4 ? .4 : .13, 'square', .5, 0, i * .12)); },
+    lose() { [440, 392, 330, 247].forEach((f, i) => tone(f, i === 3 ? .5 : .17, 'triangle', .5, 0, i * .16)); },
+    finish() { tone(180, .5, 'square', .55, 60); noise(.4, .3, 700); },
+    ui() { tone(660, .04, 'square', .3); }
+  };
+})();
 
 /* ============================================================
    7) ARENEN  (Registry — neue Arena = ein Eintrag mehr)
@@ -1869,6 +1952,7 @@ app.innerHTML = `
       <button class="ghost spd" data-v="2">2x</button>
       <button class="ghost spd" data-v="4">4x</button>
       <button class="ghost" id="btn-snap">Foto</button>
+      <button class="ghost" id="btn-mute">Ton</button>
     </div>
   </div>
 </div>
@@ -1996,9 +2080,14 @@ function updateEnemyHeader() {
 /* ============================================================
    9) RENDERING + KAMPFSCHLEIFE
    ============================================================ */
-const cv = $('#stage'), ctx = cv.getContext('2d');
-ctx.imageSmoothingEnabled = false;
+const cv = $('#stage');
+const mainCtx = cv.getContext('2d'); mainCtx.imageSmoothingEnabled = false;
+let ctx = mainCtx;                     /* wird für die Zeitlupe umgehängt */
 const W = 640, H = 360, HZ = 112;
+/* Offscreen-Puffer: in der Zeitlupe wird die Szene dorthin gezeichnet und
+   anschliessend vergrössert aufs sichtbare Canvas geblittet. */
+const scene = document.createElement('canvas'); scene.width = W; scene.height = H;
+const sctx = scene.getContext('2d'); sctx.imageSmoothingEnabled = false;
 const sxOf = u => 40 + u.x * (W - 80);
 const syOf = u => 150 + u.y * 176;
 /* scOf ist die Skalierung pro ECHTEM Pixel, s24 die pro Design-Einheit */
@@ -2141,6 +2230,22 @@ function flushLog() {
   box.scrollTop = box.scrollHeight;
 }
 
+/* Die Kampfschleife macht selbst keine Geraeusche. Der Ton haengt an den
+   Effekten, die sie erzeugt — so bleibt fastSim() lautlos. */
+function sfxFromFx() {
+  for (const f of world.fx) {
+    if (f._snd) continue;
+    f._snd = 1;
+    if (f.k === 'dmg') { f.sp ? SFX.special() : f.crit ? SFX.crit() : SFX.hit(f.v); }
+    else if (f.k === 'poof') SFX.ko();
+    else if (f.k === 'txt') {
+      if (f.s === 'DANEBEN') SFX.miss();
+      else if (f.s === 'BLOCK') SFX.block();
+      else SFX.dodge();
+    }
+  }
+}
+
 function pauseOverlay() {
   if (!paused) return;
   ctx.fillStyle = 'rgba(5,7,13,.45)'; ctx.fillRect(0, 0, W, H);
@@ -2152,6 +2257,7 @@ function frame(ts) {
   const raw = lastTs ? Math.min(.05, (ts - lastTs) / 1000) : 1 / 60; lastTs = ts;
   const dt = paused ? 0 : raw;      /* Pause friert Kampf UND Arena ein */
   arenaT += dt;
+  ctx = phase === 'slowmo' ? sctx : mainCtx;
   drawBg();
 
   if (phase === 'intro') {
@@ -2168,6 +2274,7 @@ function frame(ts) {
       world.units.filter(u => u.side === 0 && u.item && u.item.id !== 'none')
         .forEach(u => world.log.push({ c: 'spc', s: `${u.name} bringt ${u.item.name === 'Bierbank' ? 'eine' : 'einen'} ${u.item.name} mit.` }));
       world.log.push({ c: 'hit', s: 'KAMPF!' });
+      SFX.fight();
     }
     return;
   }
@@ -2176,9 +2283,38 @@ function frame(ts) {
     for (let i = 0; i < speed; i++) if (!world.over) step(world, dt);
     const units = [...world.units].filter(u => u.alive).sort((a, b) => syOf(a) - syOf(b));
     units.forEach(u => drawUnit(u));
-    drawFx(); drawFore(); updateHud(); flushLog();
+    drawFx(); drawFore(); updateHud(); flushLog(); sfxFromFx();
     pauseOverlay();
-    if (world.over) { phase = 'end'; pt = 0; }
+    if (world.over) { phase = 'slowmo'; pt = 0; SFX.finish(); }
+    return;
+  }
+
+  /* Zeitlupe auf den letzten K.O. — Zeit auf ein Fünftel, Kamera fährt rein */
+  if (phase === 'slowmo') {
+    pt += raw;
+    const sdt = dt * .2;
+    for (let i = world.fx.length - 1; i >= 0; i--) { world.fx[i].life -= sdt; if (world.fx[i].life <= 0) world.fx.splice(i, 1); }
+    for (const u of world.units) u.flash = Math.max(0, u.flash - sdt);
+    [...world.units].filter(u => u.alive).sort((a, b) => syOf(a) - syOf(b)).forEach(u => drawUnit(u));
+    drawFx(); drawFore();
+
+    ctx = mainCtx;
+    const p = Math.min(1, pt / .55);
+    const z = Math.max(1.0001, 1 + 1.05 * (1 - Math.pow(1 - p, 3)));
+    const fxp = world.lastKO ? 40 + world.lastKO.x * (W - 80) : W / 2;
+    const fyp = world.lastKO ? 150 + world.lastKO.y * 176 : H / 2;
+    /* Fokus so begrenzen, dass das vergrösserte Bild das Canvas noch füllt */
+    const hw = W / (2 * z), hh = H / (2 * z);
+    const cxp = Math.max(hw, Math.min(W - hw, fxp)), cyp = Math.max(hh, Math.min(H - hh, fyp));
+    mainCtx.save();
+    mainCtx.translate(W / 2, H / 2); mainCtx.scale(z, z); mainCtx.translate(-cxp, -cyp);
+    mainCtx.drawImage(scene, 0, 0);
+    mainCtx.restore();
+    const vg = mainCtx.createRadialGradient(W / 2, H / 2, H * .22, W / 2, H / 2, H * .85);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.55)');
+    mainCtx.fillStyle = vg; mainCtx.fillRect(0, 0, W, H);
+    pauseOverlay();
+    if (pt > 1.5) { phase = 'end'; pt = 0; }
     return;
   }
 
@@ -2188,7 +2324,7 @@ function frame(ts) {
     drawFx(); drawFore();
     banner('K.O.', '', '#fcd000');
     pauseOverlay();
-    if (pt > 1.4) { cancelAnimationFrame(raf); showResult(); }
+    if (pt > .9) { cancelAnimationFrame(raf); showResult(); }
   }
 }
 
@@ -2391,6 +2527,7 @@ function showResult() {
   const mvp = [...world.units].sort((a, b) => b.dealt - a.dealt)[0];
   const topKill = [...world.units].sort((a, b) => b.kills - a.kills)[0];
 
+  (winner === 0 ? SFX.win : SFX.lose)();
   $('#res-title').textContent = winner === 0 ? 'TEAM GEWINNT!' : winner === 1 ? 'TEAM VERLIERT.' : 'UNENTSCHIEDEN';
   $('#res-title').style.color = winner === 0 ? '#58d858' : winner === 1 ? '#e0403a' : '#fcd000';
 
@@ -2443,10 +2580,32 @@ document.addEventListener('keydown', e => {
   if (!$('#scr-battle').classList.contains('on')) return;
   if (e.code === 'Space') { e.preventDefault(); setPaused(!paused); }
   if (e.key === '1') setSpeed(1);
+
+function paintMute() { $('#btn-mute').textContent = SFX.muted ? 'Ton aus' : 'Ton an'; $('#btn-mute').classList.toggle('on', !SFX.muted); }
+$('#btn-mute').onclick = () => { SFX.toggle(); paintMute(); };
+paintMute();
+
+/* Kleiner Klick auf jedem Button — öffnet nebenbei den AudioContext,
+   den der Browser sonst erst nach einer Nutzergeste erlaubt. */
+document.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b && b.id !== 'btn-mute') SFX.ui();
+}, true);
   if (e.key === '2') setSpeed(2);
   if (e.key === '4') setSpeed(4);
 });
 setSpeed(1);
+
+function paintMute() { $('#btn-mute').textContent = SFX.muted ? 'Ton aus' : 'Ton an'; $('#btn-mute').classList.toggle('on', !SFX.muted); }
+$('#btn-mute').onclick = () => { SFX.toggle(); paintMute(); };
+paintMute();
+
+/* Kleiner Klick auf jedem Button — öffnet nebenbei den AudioContext,
+   den der Browser sonst erst nach einer Nutzergeste erlaubt. */
+document.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b && b.id !== 'btn-mute') SFX.ui();
+}, true);
 
 function buildRoleList() {
   $('#roles-body').innerHTML = Object.entries(ROLES).map(([k, r]) => `
