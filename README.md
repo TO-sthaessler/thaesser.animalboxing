@@ -10,7 +10,7 @@ Dependencies. Doppelklick genügt, oder über GitHub Pages hosten.
 
 | | |
 |---|---|
-| **7 Kämpfer** | fünf stehen, zwei Plätze sind noch Platzhalter |
+| **7 Kämpfer** | sechs stehen, ein Platz ist noch Platzhalter |
 | **10 Rollen** | Statprofil + echte Mechanik, frei zuweisbar |
 | **50 Gegner** | mit halbwegs echten Werten (Gewicht, Beisskraft, Tempo, Aggression) |
 | **4 Arenen** | Wiese, Dojo, Strand, Parkhaus |
@@ -74,8 +74,9 @@ Rollen dürfen doppelt vergeben werden.
 | Konrad | Der Ruhige (One-Punch) |
 | Hirschi | Der Taktiker (Krit-Jäger) |
 | Marsn | Der Tritt-König (Anti-Schwarm) |
+| Sascha | Das Chaos (Glücksritter) |
 
-Noch frei: Fels, Faust, Wand, Chaos, Überlebender.
+Noch frei: Fels, Faust, Wand, Überlebender.
 
 ## Glück
 
@@ -112,6 +113,7 @@ Signatur: `F(id, Name, Rolle, Aussehen)`. Verfügbare Aussehen-Optionen:
   oder `panel` (andersfarbige Partie auf einer Seite). Liegt über Rumpf
   und Ärmeln.
 * `hood: 1` für Kapuzenpulli (Kapuze im Nacken plus Kordeln)
+* `shadesUp: 1` für die auf den Kopf geschobene Sonnenbrille
 * `hairStyle` zusätzlich: `fringe` (Pony)
 * Farben: `skin` `hair` `beardCol` `shirt` `shirt2` `shirt3` `pants` `shoe`
   `lens` `bagCol` `tattooCol` `jewel` `line`
