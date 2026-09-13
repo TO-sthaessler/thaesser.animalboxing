@@ -86,7 +86,9 @@ Umbesetzungen bereit.
 
 ## Arenen
 
-Auswählbar im Gegner-Screen. Jede Arena hat eine Hintergrund-Ebene (`deco`)
+Eigener Schritt im Setup ("3. Arena wählen") mit echten Vorschaubildern —
+jede Kachel ist die Arena selbst, in den Offscreen-Puffer gerendert und
+verkleinert. Jede Arena hat eine Hintergrund-Ebene (`deco`)
 und optional eine Vordergrund-Ebene (`fore`), die **vor** den Kämpfern
 läuft. Beide bekommen eine Zeitachse, sind also animiert.
 

@@ -80,6 +80,13 @@ button.on,button.ghost.on{background:var(--nes-yellow);color:#06101e;border-colo
 .stepper button{padding:4px 7px;font-size:9px;box-shadow:0 0 0 2px #000}
 .stepper .cnt{font-size:9px;min-width:22px;text-align:center;color:var(--nes-yellow)}
 
+.arena-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.atile{border:3px solid #3a4870;background:var(--nes-panel2);padding:4px;cursor:pointer;
+  display:flex;flex-direction:column;gap:5px;align-items:center}
+.atile:hover{border-color:var(--nes-blue)}
+.atile.sel{border-color:var(--nes-yellow);box-shadow:inset 0 0 0 2px var(--nes-yellow)}
+.atile canvas{width:100%;height:auto;display:block;image-rendering:pixelated}
+.atile .an{font-size:7px;line-height:1.6;text-align:center}
 .filterbar input,.filterbar select{font-family:inherit;font-size:9px;padding:8px;
   background:#0b1120;color:var(--nes-ink);border:3px solid #3a4870}
 
@@ -1919,10 +1926,16 @@ app.innerHTML = `
     <div class="row filterbar" style="margin-top:10px">
       <input id="enemy-search" placeholder="suchen..." style="flex:1 1 140px">
       <select id="enemy-group"></select>
-      <select id="arena-pick"></select>
       <button class="ghost" id="btn-clear-enemies">Leeren</button>
     </div>
     <div class="enemy-list" id="enemy-list" style="margin-top:10px"></div>
+  </div>
+  <div class="panel">
+    <div class="row spread">
+      <div style="font-size:11px">3. ARENA WÄHLEN</div>
+      <div style="font-size:9px;color:var(--nes-yellow)" id="arena-name">Wiese</div>
+    </div>
+    <div class="arena-grid" id="arena-grid" style="margin-top:12px"></div>
   </div>
   <div class="row spread">
     <button class="ghost" id="btn-back-select">← Team</button>
@@ -2034,6 +2047,42 @@ function buildFighterGrid() {
   });
 }
 
+/* --- Arena-Auswahl mit echten Vorschaubildern ---------------------
+   Für die Vorschau wird die Arena ganz normal gerendert, nur in den
+   Offscreen-Puffer und auf Kachelgrösse verkleinert. */
+const ARENA_PREVIEW_T = {
+  geisterbahn: 5.75, strand: 2.5, stadion: 2.2, innenstadt: 3,
+  wolkenkratzer: 4.4, wiese: 1.2, dojo: 0, parkhaus: 1.4
+};
+function arenaThumb(key, tw = 200) {
+  const prevKey = arenaKey, prevCtx = ctx, prevT = arenaT;
+  arenaKey = key; arenaT = ARENA_PREVIEW_T[key] ?? 2; ctx = sctx;
+  drawBg(); drawFore();
+  arenaKey = prevKey; arenaT = prevT; ctx = prevCtx;
+  const c = document.createElement('canvas');
+  c.width = tw; c.height = Math.round(tw * H / W);
+  const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
+  x.drawImage(scene, 0, 0, c.width, c.height);
+  return c;
+}
+function buildArenaGrid() {
+  const g = $('#arena-grid'); g.innerHTML = '';
+  Object.entries(ARENAS).forEach(([k, a]) => {
+    const d = document.createElement('div');
+    d.className = 'atile' + (k === arenaKey ? ' sel' : '');
+    d.appendChild(arenaThumb(k));
+    const n = document.createElement('div'); n.className = 'an'; n.textContent = a.name;
+    d.appendChild(n);
+    d.onclick = () => {
+      arenaKey = k;
+      g.querySelectorAll('.atile').forEach(t => t.classList.toggle('sel', t === d));
+      $('#arena-name').textContent = a.name;
+    };
+    g.appendChild(d);
+  });
+  $('#arena-name').textContent = ARENAS[arenaKey].name;
+}
+
 /* --- Gegner-Auswahl --- */
 const enemyCount = new Map();
 function totalEnemies() { let n = 0; enemyCount.forEach(v => n += v); return n; }
@@ -2042,8 +2091,6 @@ const MAX_ENEMIES = 100;
 function buildEnemyList() {
   const groups = [...new Set(ANIMALS.map(a => a.grp))];
   $('#enemy-group').innerHTML = '<option value="">alle Gruppen</option>' + groups.map(g => `<option>${g}</option>`).join('');
-  $('#arena-pick').innerHTML = Object.entries(ARENAS).map(([k, v]) => `<option value="${k}">Arena: ${v.name}</option>`).join('');
-  $('#arena-pick').onchange = e => arenaKey = e.target.value;
   renderEnemyList();
 }
 function renderEnemyList() {
@@ -2631,6 +2678,7 @@ $('#roles-toggle').onclick = () => {
 buildRoleList();
 buildFighterGrid();
 buildEnemyList();
+buildArenaGrid();
 updateEnemyHeader();
 /* Voreinstellung fürs Demo: 20 Chihuahuas */
 enemyCount.set('chihuahua', 20); renderEnemyList(); updateEnemyHeader();
