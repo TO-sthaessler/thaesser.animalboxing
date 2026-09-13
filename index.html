@@ -572,17 +572,20 @@ function human(o = {}) {
   rect(g, cx - 1.4, sh - .3, 2.8, .7, '2');            /* Kragen */
 
 
-  /* Arme — bei kurzen Aermeln liegt der Unterarm frei */
+  /* Arme — bei kurzen Aermeln liegt der Unterarm frei.
+     armsUp ist die Siegerpose: dieselben Teile, nur nach oben. */
   const slv = o.shortSleeve ? 2 : 4.2;
   const sleeveCol = o.jacket ? 'i' : '1';
-  rect(g, cx - w - 2.2, sh, 2.2, slv, sleeveCol);
-  rect(g, cx + w, sh, 2.2, slv, sleeveCol);
-  if (o.shortSleeve) {
-    rect(g, cx - w - 2, sh + slv, 1.9, 4.2 - slv, '3');
-    rect(g, cx + w + .1, sh + slv, 1.9, 4.2 - slv, '3');
+  const up = !!o.armsUp;
+  const armTop = up ? sh - 4.2 : sh;
+  for (const x0 of [cx - w - 2.2, cx + w]) {
+    rect(g, x0, armTop, 2.2, 4.2, sleeveCol);
+    /* Haut sitzt immer am koerperfernen Ende des Arms */
+    if (o.shortSleeve) rect(g, x0 + .1, up ? armTop : sh + slv, 1.9, 4.2 - slv, '3');
   }
-  ell(g, cx - w - 1.1, sh + 4.8, 1.3, 1.3, '3');
-  ell(g, cx + w + 1.1, sh + 4.8, 1.3, 1.3, '3');
+  const handY = up ? sh - 5 : sh + 4.8;
+  ell(g, cx - w - 1.1, handY, 1.3, 1.3, '3');
+  ell(g, cx + w + 1.1, handY, 1.3, 1.3, '3');
 
   /* Stoffmuster liegt über Rumpf UND Ärmeln */
   if (o.shirtPat === 'diag') {
@@ -630,12 +633,16 @@ function human(o = {}) {
     rect(g, cx + 1.2, sh + 1.4, .5, 2.6, '9');
   }
 
-  if (o.watch) { rect(g, cx + w + .1, sh + 3.6, 1.9, 1.4, '4'); px(g, cx + w + 1, sh + 4, 'g'); }
+  if (o.watch) {
+    const wy = up ? sh - 2.8 : sh + 3.6;
+    rect(g, cx + w + .1, wy, 1.9, 1.4, '4'); px(g, cx + w + 1, wy + .4, 'g');
+  }
   if (o.tattoo) {                                       /* tätowierter Unterarm */
+    const ty = up ? sh - 3.4 : sh + 2.8;
     maskedDraw(g, () => {
-      ell(g, cx + w + 1, sh + 2.8, .8, .7, 'f');
-      ell(g, cx + w + 1.4, sh + 4, .6, .6, 'f');
-      px(g, cx + w + .4, sh + 3.4, 'f');
+      ell(g, cx + w + 1, ty, .8, .7, 'f');
+      ell(g, cx + w + 1.4, ty + 1.2, .6, .6, 'f');
+      px(g, cx + w + .4, ty + .6, 'f');
     }, ['3'], 'f');
   }
 
@@ -1070,7 +1077,9 @@ const F = (id, name, roleKey, look) => {
   return {
     id, name, role: roleKey, tag: r.name, kurz: r.kurz, was: r.was, passive: r.passive,
     hp: r.hp, atk: r.atk, def: r.def, spd: r.spd, special: r.special, human: true,
-    pal: PH(look), build: () => human(look)
+    look, pal: PH(look), build: () => human(look),
+    /* zweite Pose, nur fuer die Siegesfeier */
+    winDef: { id: id + '@sieg', name, pal: PH(look), build: () => human({ ...look, armsUp: 1 }) }
   };
 };
 
@@ -2196,19 +2205,24 @@ function drawFore() {
   if (a.fore) a.fore(ctx, W, H, HZ, arenaT);
 }
 
-function drawUnit(u, dx = 0) {
-  const x = sxOf(u) + dx, y = syOf(u), s = scOf(u);
+function drawUnit(u, dx = 0, dy = 0) {
+  const x = sxOf(u) + dx, gy = syOf(u), y = gy + dy, s = scOf(u);
   const lean = u.lunge * (u.side === 0 ? 7 : -7);
-  ctx.globalAlpha = .28; ctx.fillStyle = '#000';
+  const feiert = phase === 'victory';
+  const sdef = (feiert && u.def.winDef) ? u.def.winDef : u.def;
   const s24 = s * R;
-  ctx.beginPath(); ctx.ellipse(x, y + 1, 9 * s24 * .6, 3 * s24 * .6, 0, 0, 7); ctx.fill();
+  /* Schatten bleibt am Boden und schrumpft beim Sprung */
+  const schrumpf = Math.max(.45, 1 - Math.abs(dy) / 38);
+  ctx.globalAlpha = .28 * schrumpf; ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.ellipse(x, gy + 1, 9 * s24 * .6 * schrumpf, 3 * s24 * .6 * schrumpf, 0, 0, 7); ctx.fill();
   ctx.globalAlpha = 1;
-  drawSprite(ctx, u.def, x + lean, y, s, u.side === 1, false);
+  drawSprite(ctx, sdef, x + lean, y, s, u.side === 1, false);
   if (u.flash > 0) {
     ctx.globalAlpha = Math.min(.72, u.flash * 7);
-    drawSprite(ctx, u.def, x + lean, y, s, u.side === 1, true);
+    drawSprite(ctx, sdef, x + lean, y, s, u.side === 1, true);
     ctx.globalAlpha = 1;
   }
+  if (feiert) return;
   /* mitgebrachter Gegenstand in der Hand */
   if (u.item && u.item.build) {
     const dir = u.side === 0 ? 1 : -1;
@@ -2216,7 +2230,7 @@ function drawUnit(u, dx = 0) {
   }
 
   /* Mini-HP */
-  const spr = getSprite(u.def);
+  const spr = getSprite(sdef);
   const bw = Math.max(10, Math.round(18 * s24 * .5)), bx = Math.round(x - bw / 2);
   const by = Math.round(y - (SH - spr.top) * s - 5);
   ctx.fillStyle = '#000'; ctx.fillRect(bx - 1, by - 1, bw + 2, 4);
@@ -2251,12 +2265,12 @@ function drawFx() {
   }
 }
 
-function banner(txt, sub, col) {
+function banner(txt, sub, col, size = 30, cy = H / 2) {
   ctx.textAlign = 'center';
-  ctx.font = '30px "Press Start 2P", monospace';
-  ctx.fillStyle = '#000'; ctx.fillText(txt, W / 2 + 3, H / 2 + 3);
-  ctx.fillStyle = col; ctx.fillText(txt, W / 2, H / 2);
-  if (sub) { ctx.font = '10px "Press Start 2P", monospace'; ctx.fillStyle = '#fff'; ctx.fillText(sub, W / 2, H / 2 + 28); }
+  ctx.font = size + 'px "Press Start 2P", monospace';
+  ctx.fillStyle = '#000'; ctx.fillText(txt, W / 2 + 3, cy + 3);
+  ctx.fillStyle = col; ctx.fillText(txt, W / 2, cy);
+  if (sub) { ctx.font = '10px "Press Start 2P", monospace'; ctx.fillStyle = '#fff'; ctx.fillText(sub, W / 2, cy + 28); }
 }
 
 let world = null, phase = 'idle', pt = 0, speed = 1, raf = 0, logIdx = 0, lastTs = 0;
@@ -2331,6 +2345,43 @@ function sfxFromFx() {
   }
 }
 
+/* Die Ueberlebenden sammeln sich fuer die Feier in Reihen in der Bildmitte,
+   statt als Knaeuel dort stehen zu bleiben, wo der Kampf endete. */
+function startVictory() {
+  const w = world.units.filter(u => u.alive);
+  const perRow = Math.min(8, Math.max(1, Math.ceil(Math.sqrt(w.length * 1.6))));
+  const rows = Math.ceil(w.length / perRow);
+  const maxVis = Math.max(...w.map(u => u.vis || 1));
+  w.forEach((u, i) => {
+    const row = Math.floor(i / perRow), col = i % perRow;
+    const n = Math.min(perRow, w.length - row * perRow);
+    /* Abstand richtet sich nach der groessten Figur, sonst stehen Baeren ineinander */
+    const sp = Math.min(.9 / Math.max(1, n), .06 + .075 * maxVis);
+    u.cx = .5 + (col - (n - 1) / 2) * sp;
+    u.cy = .46 + (rows > 1 ? row / (rows - 1) : .5) * .3;
+  });
+  startConfetti();
+}
+
+let confetti = [];
+function startConfetti() {
+  const cols = ['#e0403a', '#fcd000', '#3cbcfc', '#58d858', '#f0f0f2', '#d84ad8'];
+  confetti = Array.from({ length: 84 }, (_, i) => ({
+    x: Math.random() * W, y: -Math.random() * H * .9,
+    vy: 45 + Math.random() * 90, vx: (Math.random() - .5) * 26,
+    s: 3 + Math.floor(Math.random() * 3), c: cols[i % cols.length], w: Math.random() * 6.28
+  }));
+}
+function drawConfetti(dt) {
+  for (const p of confetti) {
+    p.y += p.vy * dt; p.x += p.vx * dt + Math.sin(p.w + p.y * .05) * .5;
+    if (p.y > H + 10) { p.y = -10; p.x = Math.random() * W; }
+    if (p.x < -10) p.x = W + 8; else if (p.x > W + 10) p.x = -8;
+    const h = Math.max(1, Math.abs(Math.cos(p.w + p.y * .08)) * p.s);
+    ctx.fillStyle = p.c; ctx.fillRect(Math.round(p.x), Math.round(p.y), p.s, Math.round(h));
+  }
+}
+
 function pauseOverlay() {
   if (!paused) return;
   ctx.fillStyle = 'rgba(5,7,13,.45)'; ctx.fillRect(0, 0, W, H);
@@ -2399,7 +2450,36 @@ function frame(ts) {
     vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.55)');
     mainCtx.fillStyle = vg; mainCtx.fillRect(0, 0, W, H);
     pauseOverlay();
-    if (pt > 1.5) { phase = 'end'; pt = 0; }
+    if (pt > 1.5) {
+      pt = 0;
+      if (world.units.some(u => u.alive)) {
+        phase = 'victory'; startVictory();
+        (world.winner === 0 ? SFX.win : SFX.lose)();
+      } else phase = 'end';
+    }
+    return;
+  }
+
+  /* Siegesfeier: die Ueberlebenden hopsen, Menschen mit erhobenen Armen */
+  if (phase === 'victory') {
+    pt += raw;
+    const feiernde = world.units.filter(u => u.alive);
+    const k = Math.min(1, dt * 3.5);
+    feiernde.forEach(u => { u.x += (u.cx - u.x) * k; u.y += (u.cy - u.y) * k; });
+    [...feiernde].sort((a, b) => syOf(a) - syOf(b)).forEach((u, i) => {
+      const hop = Math.max(0, Math.sin(pt * 7.5 + i * .8)) * (9 + 5 * Math.sin(pt * 2.2)) * (u.vis || 1);
+      drawUnit(u, 0, -hop);
+    });
+    drawConfetti(dt);
+    drawFore();
+    const sieg = world.winner === 0;
+    /* dunkler Streifen, damit die Schrift in jeder Arena lesbar bleibt */
+    ctx.fillStyle = 'rgba(5,7,13,.58)'; ctx.fillRect(0, 42, W, 66);
+    banner(sieg ? 'SIEG!' : 'TIERE SIEGEN!',
+           (sieg ? teamLabel(0) : teamLabel(1)).slice(0, 42),
+           sieg ? '#58d858' : '#e0403a', sieg ? 30 : 24, 74);
+    pauseOverlay();
+    if (pt > 3) { cancelAnimationFrame(raf); showResult(); }
     return;
   }
 
@@ -2720,7 +2800,6 @@ function showResult() {
   const mvp = [...world.units].sort((a, b) => b.dealt - a.dealt)[0];
   const topKill = [...world.units].sort((a, b) => b.kills - a.kills)[0];
 
-  (winner === 0 ? SFX.win : SFX.lose)();
   $('#res-title').textContent = winner === 0 ? 'TEAM GEWINNT!' : winner === 1 ? 'TEAM VERLIERT.' : 'UNENTSCHIEDEN';
   $('#res-title').style.color = winner === 0 ? '#58d858' : winner === 1 ? '#e0403a' : '#fcd000';
 

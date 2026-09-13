@@ -176,6 +176,22 @@ Der Ton-Button steht in der Kampfleiste, die Einstellung überlebt in
 `localStorage`. Der AudioContext wird erst beim ersten Klick geöffnet,
 weil Browser ihn sonst blockieren.
 
+## Siegesfeier
+
+Nach der Zeitlupe feiern die Überlebenden: sie sammeln sich in Reihen in
+der Bildmitte und hopsen versetzt, dazu Konfetti und eine Fanfare.
+
+Menschen reissen dabei die Arme hoch — dafür hat der Mensch-Bauplan eine
+zweite Pose (`armsUp`). Sie wird als eigener Sprite gebaut und im
+Cache gehalten, Ärmel, Uhr und Tattoo wandern korrekt mit. Tiere hopsen
+nur; ein springender Braunbär reicht auch so.
+
+Der Abstand der Figuren richtet sich nach der grössten beteiligten Figur,
+sonst stehen zwei Bären ineinander.
+
+Gewinnen die Tiere, feiern eben sie — die Feier gehört der Seite, die
+übrig ist.
+
 ## Zeitlupe
 
 Wenn der letzte Gegner fällt, schaltet das Spiel in die Phase `slowmo`:
