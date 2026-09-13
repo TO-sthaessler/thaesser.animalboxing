@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="googlebot" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
 <title>ANIMAL BOXING</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -106,12 +109,16 @@ button.on,button.ghost.on{background:var(--nes-yellow);color:#06101e;border-colo
 
 #report-wrap canvas{width:100%;max-width:520px;image-rendering:pixelated;
   border:3px solid var(--nes-border);box-shadow:0 0 0 3px #000;display:block}
-#log{height:104px;overflow-y:auto;background:#05070d;border:3px solid #3a4870;
+#log,#res-log{height:104px;overflow-y:auto;background:#05070d;border:3px solid #3a4870;
   padding:8px;font-size:8px;line-height:1.9;color:var(--nes-dim)}
-#log b{color:var(--nes-ink)}
-#log .hit{color:var(--nes-yellow)}
-#log .ko{color:var(--nes-red)}
-#log .spc{color:var(--nes-blue)}
+#res-log{height:250px}
+#log b,#res-log b{color:var(--nes-ink)}
+#log .hit,#res-log .hit{color:var(--nes-yellow)}
+#log .ko,#res-log .ko{color:var(--nes-red)}
+#log .spc,#res-log .spc{color:var(--nes-blue)}
+#balance-box{width:100%;height:240px;margin-top:10px;background:#05070d;color:#cfe;
+  border:3px solid #3a4870;font-family:ui-monospace,"Courier New",monospace;
+  font-size:10px;line-height:1.5;padding:8px;white-space:pre;overflow:auto}
 
 .blink{animation:bl 1s steps(2,start) infinite}
 @keyframes bl{to{visibility:hidden}}
@@ -1199,6 +1206,8 @@ const ITEMS = [
     () => { const g = igrid(); tri(g, 4.2, 6, 7, 1.4, 9.8, 6, '1'); ell(g, 7, 7.4, 2.4, 2, '3'); ell(g, 7, 10, 3, 2.4, '9'); px(g, 6.2, 7.2, '4'); px(g, 7.8, 7.2, '4'); ell(g, 7, 8.6, 1.6, 1.2, '9'); return fin(g); })
 ];
 const ITEM_BY_ID = id => ITEMS.find(i => i.id === id) || ITEMS[0];
+/* Fürs Aufklappmenü alphabetisch, "— nichts —" bleibt vorn */
+const ITEMS_SORTED = [ITEMS[0], ...ITEMS.slice(1).sort((a, b) => a.name.localeCompare(b.name, 'de'))];
 
 /* ============================================================
    6) KAMPF-MATHEMATIK
@@ -1245,7 +1254,8 @@ function makeUnit(def, side, itemId) {
     atk: s.atk + (m.atk || 0), dfn: s.def + (m.def || 0),
     spd: Math.max(3, s.spd + (m.spd || 0)),
     x: 0, y: 0, tx: 0, ty: 0, target: null, cd: Math.random() * .6,
-    alive: true, flash: 0, bob: Math.random() * 6.28, lunge: 0, kills: 0, dealt: 0
+    alive: true, flash: 0, bob: Math.random() * 6.28, lunge: 0, kills: 0, dealt: 0,
+    taken: 0, atks: 0, lands: 0
   };
 }
 
@@ -1306,7 +1316,7 @@ function applyDamage(w, atk, tgt, raw, tag) {
   let chain = 0, cur = tgt;
   while (cur && chain <= TUNE.cleaveChain) {
     const take = Math.min(dmg, cur.hp);
-    cur.hp -= take; dmg -= take; atk.dealt += take; cur.taken = (cur.taken || 0) + take;
+    cur.hp -= take; dmg -= take; atk.dealt += take; cur.taken += take;
     w.stats.dmg += take;
     cur.flash = .09;
     w.fx.push({ k: 'dmg', x: cur.x + (Math.random() - .5) * .03, y: cur.y, v: take,
@@ -1341,7 +1351,7 @@ function supportAura(w, u) {
 
 function doAttack(w, u) {
   const t = u.target; if (!t || !t.alive) return;
-  u.lunge = .22;
+  u.lunge = .22; u.atks++;
   const pas = u.passive;
   const luckMul = pas === 'chaos' ? 2 : 1;   /* Chaos hat mehr Glück UND mehr Pech */
 
@@ -1384,7 +1394,7 @@ function doAttack(w, u) {
   else if (crit) raw *= pas === 'brecher' ? 2.5 : 1.8;
   else if (lucky) raw *= LUCK.luckyMult;
 
-  w.stats.hits++;
+  w.stats.hits++; u.lands++;
   if (isSpecial) w.stats.specials++; else if (crit) w.stats.crit++; else if (lucky) w.stats.lucky++;
   applyDamage(w, u, t, raw * defMod(t), isSpecial ? 'special' : (crit || lucky) ? 'crit' : 'hit');
 
@@ -1987,6 +1997,19 @@ app.innerHTML = `
     <div id="toast" style="font-size:8px;color:var(--nes-green);line-height:2;margin-top:8px;min-height:16px"></div>
     <div id="report-wrap" style="margin-top:12px"></div>
   </div>
+  <div class="panel dark">
+    <div class="row spread">
+      <div style="font-size:10px">KAMPFPROTOKOLL</div>
+      <div style="font-size:8px;color:var(--nes-dim)" id="res-log-count"></div>
+    </div>
+    <div id="res-log" style="margin-top:10px"></div>
+    <div class="row" style="margin-top:10px;gap:8px">
+      <button class="ghost" id="btn-balance">Balancing-Log</button>
+      <button class="ghost" id="btn-balance-copy" style="display:none">Kopieren</button>
+      <button class="ghost" id="btn-balance-save" style="display:none">Als Datei</button>
+    </div>
+    <textarea id="balance-box" spellcheck="false" style="display:none"></textarea>
+  </div>
   <div class="row spread">
     <button class="ghost" id="btn-rematch">↻ Rematch</button>
     <button class="primary" id="btn-new">Neuer Kampf</button>
@@ -2020,7 +2043,7 @@ function buildFighterGrid() {
       <div class="tag st">HP ${s.hp} · ATK ${s.atk}<br>DEF ${s.def} · SPD ${s.spd}</div>
       <div class="itembox">
         <div class="icw"></div>
-        <select class="item-pick">${ITEMS.map(i => `<option value="${i.id}">${i.name}</option>`).join('')}</select>
+        <select class="item-pick">${ITEMS_SORTED.map(i => `<option value="${i.id}">${i.name}</option>`).join('')}</select>
         <div class="tag it-desc"></div>
       </div>`;
     d.insertBefore(thumb(f, 3), d.children[1]);
@@ -2560,6 +2583,93 @@ function reportCanvas(r) {
   return c;
 }
 
+/* ============================================================
+   10b) PROTOKOLLE
+   Kampfprotokoll zum Nachlesen und ein technisches Log zum
+   Nachbalancieren.
+   ============================================================ */
+function renderResultLog() {
+  const box = $('#res-log'); box.innerHTML = '';
+  world.log.forEach(e => {
+    const d = document.createElement('div');
+    d.className = e.c || ''; d.textContent = '› ' + e.s;
+    box.appendChild(d);
+  });
+  $('#res-log-count').textContent = world.log.length + ' Zeilen';
+  box.scrollTop = 0;
+}
+
+function balanceLog(w) {
+  const L = [];
+  const P = (v, n) => String(v).padEnd(n);
+  const R2 = (v, n) => String(v).padStart(n);
+  const q = (a, b) => b ? (a / b * 100).toFixed(0) + '%' : '–';
+
+  L.push('ANIMAL BOXING — BALANCING-LOG');
+  L.push(new Date().toLocaleString('de-DE') + '   Arena: ' + ARENAS[arenaKey].name);
+  L.push('Dauer ' + w.t.toFixed(2) + 's   Ergebnis: ' +
+    (w.winner === 0 ? 'TEAM GEWINNT' : w.winner === 1 ? 'TEAM VERLIERT' : 'unentschieden'));
+  L.push('');
+  L.push('STELLSCHRAUBEN');
+  L.push('  TUNE.mitig=' + TUNE.mitig + '  TUNE.baseRate=' + TUNE.baseRate +
+         '  TUNE.cleaveChain=' + TUNE.cleaveChain + '  SWEEP_RATIO=' + SWEEP_RATIO);
+  L.push('  LUCK.miss=' + LUCK.miss + '  LUCK.lucky=' + LUCK.lucky + '  LUCK.luckyMult=' + LUCK.luckyMult);
+  L.push('  Schlagrate = 1 / (baseRate*SPD + 0.26), Mitigation = 1 - DEF/(DEF+mitig)');
+  L.push('');
+
+  const team = w.units.filter(u => u.side === 0);
+  L.push('TEAM');
+  L.push('  ' + P('NAME', 11) + P('ROLLE', 11) + P('GEGENSTAND', 19) +
+    R2('ATK', 4) + R2('DEF', 4) + R2('SPD', 4) + R2('HP-REST', 10) +
+    R2('SCHADEN', 9) + R2('KASSIERT', 10) + R2('K.O.', 6) + R2('ANGR', 6) + R2('TRFF', 6) + R2('QUOTE', 7));
+  team.forEach(u => {
+    L.push('  ' + P(u.name, 11) + P(u.def.role || '–', 11) +
+      P(u.item && u.item.id !== 'none' ? u.item.name : '–', 19) +
+      R2(u.atk, 4) + R2(u.dfn, 4) + R2(u.spd, 4) +
+      R2(Math.round(u.hp) + '/' + u.maxHp, 10) +
+      R2(Math.round(u.dealt), 9) + R2(Math.round(u.taken), 10) +
+      R2(u.kills, 6) + R2(u.atks, 6) + R2(u.lands, 6) + R2(q(u.lands, u.atks), 7));
+  });
+  L.push('');
+
+  /* Gegner nach Art zusammenfassen — 50 Einzelzeilen liest niemand */
+  const kinds = new Map();
+  w.units.filter(u => u.side === 1).forEach(u => {
+    const e = kinds.get(u.name) || { n: 0, down: 0, dealt: 0, taken: 0, atks: 0, lands: 0, kills: 0, u };
+    e.n++; if (!u.alive) e.down++;
+    e.dealt += u.dealt; e.taken += u.taken; e.atks += u.atks; e.lands += u.lands; e.kills += u.kills;
+    kinds.set(u.name, e);
+  });
+  L.push('GEGNER (nach Art, Werte je Einzeltier)');
+  L.push('  ' + P('ART', 17) + R2('ANZ', 5) + R2('KG', 8) + R2('HP', 6) + R2('ATK', 5) + R2('DEF', 5) + R2('SPD', 5) +
+    R2('ERLEDIGT', 10) + R2('SCHADEN', 9) + R2('KASSIERT', 10) + R2('K.O.', 6) + R2('ANGR', 6) + R2('QUOTE', 7));
+  [...kinds].forEach(([n, e]) => {
+    const src = e.u.src;
+    L.push('  ' + P(n, 17) + R2(e.n, 5) + R2(src.kg, 8) + R2(e.u.maxHp, 6) +
+      R2(e.u.atk, 5) + R2(e.u.dfn, 5) + R2(e.u.spd, 5) +
+      R2(e.down + '/' + e.n, 10) + R2(Math.round(e.dealt), 9) + R2(Math.round(e.taken), 10) +
+      R2(e.kills, 6) + R2(e.atks, 6) + R2(q(e.lands, e.atks), 7));
+  });
+  L.push('');
+
+  const st = w.stats;
+  const dpsA = w.t ? (team.reduce((a, u) => a + u.dealt, 0) / w.t) : 0;
+  const dpsB = w.t ? ([...kinds].reduce((a, [, e]) => a + e.dealt, 0) / w.t) : 0;
+  L.push('GESAMT');
+  L.push('  Angriffe ' + st.hits + '   davon Specials ' + st.specials + ' (' + q(st.specials, st.hits) + ')' +
+         '   Krits ' + st.crit + ' (' + q(st.crit, st.hits) + ')' +
+         '   Glückstreffer ' + st.lucky + ' (' + q(st.lucky, st.hits) + ')');
+  L.push('  Danebengehauen ' + st.miss + '   Ausgewichen ' + st.dodge + '   Geblockt ' + st.block);
+  L.push('  Schaden gesamt ' + st.dmg + '   pro gelandetem Angriff ' + (st.hits ? (st.dmg / st.hits).toFixed(1) : 0) +
+         '   pro Sekunde ' + (w.t ? (st.dmg / w.t).toFixed(1) : 0));
+  L.push('  Schaden pro Sekunde: Team ' + dpsA.toFixed(1) + '   Gegner ' + dpsB.toFixed(1));
+  L.push('  K.O.s gesamt ' + st.kos + '   haertester Treffer ' + st.best.v + ' (' + st.best.by + ' auf ' + st.best.on + ')');
+  L.push('');
+  L.push('EREIGNISSE (' + w.log.length + ')');
+  w.log.forEach(e => L.push('  ' + e.s));
+  return L.join('\n');
+}
+
 let lastReport = null;
 function toast(msg) {
   const t = $('#toast'); t.textContent = msg;
@@ -2634,6 +2744,11 @@ function showResult() {
   };
   draw();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw).catch(() => {});
+  renderResultLog();
+  $('#balance-box').style.display = 'none';
+  $('#btn-balance-copy').style.display = 'none';
+  $('#btn-balance-save').style.display = 'none';
+  $('#btn-balance').textContent = 'Balancing-Log';
   $('#toast').textContent = '';
   show('scr-result');
 }
@@ -2648,6 +2763,25 @@ $('#btn-abort').onclick = () => { cancelAnimationFrame(raf); phase = 'idle'; sho
 $('#btn-share').onclick = shareReport;
 $('#btn-save').onclick = saveReport;
 $('#btn-copy').onclick = copyReport;
+$('#btn-balance').onclick = () => {
+  const box = $('#balance-box'), auf = box.style.display === 'none';
+  if (auf && world) box.value = balanceLog(world);
+  box.style.display = auf ? 'block' : 'none';
+  $('#btn-balance-copy').style.display = auf ? '' : 'none';
+  $('#btn-balance-save').style.display = auf ? '' : 'none';
+  $('#btn-balance').textContent = auf ? 'Log zuklappen' : 'Balancing-Log';
+};
+$('#btn-balance-copy').onclick = async () => {
+  try { await navigator.clipboard.writeText($('#balance-box').value); toast('Balancing-Log kopiert.'); }
+  catch (e) { $('#balance-box').select(); toast('Kopieren blockiert — Text ist markiert.'); }
+};
+$('#btn-balance-save').onclick = () => {
+  const blob = new Blob([$('#balance-box').value], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.download = 'animal-boxing-balancing.txt';
+  a.href = URL.createObjectURL(blob); a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
 $('#btn-rematch').onclick = startBattle;
 $('#btn-new').onclick = () => show('scr-select');
 $('#btn-clear-enemies').onclick = () => { enemyCount.clear(); renderEnemyList(); updateEnemyHeader(); };

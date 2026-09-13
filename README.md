@@ -116,6 +116,38 @@ meinearena: {
 
 `t` läuft in Sekunden durch und stoppt nie — auch nicht zwischen den Kämpfen.
 
+## Protokolle
+
+Auf dem Ergebnis-Screen stehen zwei Protokolle:
+
+**Kampfprotokoll** — der vollständige Kampflog zum Nachlesen, nichts
+abgeschnitten. Im Kampf selbst wird die Anzeige bei 120 Zeilen gekappt,
+damit sie flüssig bleibt; hier steht alles.
+
+**Balancing-Log** — ein technisches Log zum Nachjustieren. Enthält die
+aktuellen Stellschrauben (`TUNE`, `LUCK`, `SWEEP_RATIO`) samt Formeln,
+eine Tabelle pro Kämpfer (Werte, Rest-HP, ausgeteilter und kassierter
+Schaden, K.O.s, Angriffe, Trefferquote), dieselbe Tabelle für die Gegner
+nach Art zusammengefasst, Gesamtzahlen inklusive Schaden pro Sekunde je
+Seite, und am Ende alle Ereignisse. Zum Kopieren oder als `.txt`.
+
+Das Log macht Zielkonflikte sichtbar, die man sonst nur ahnt — etwa dass
+ein Kämpfer mit Gartenstuhl (+14 DEF, −4 SPD) in elf Sekunden nur zweimal
+zum Schlag kommt.
+
+## Nicht indexieren
+
+Die Seite trägt `noindex, nofollow, noarchive, nosnippet, noimageindex`
+als Meta-Tag, dazu `referrer: no-referrer`. Suchmaschinen, die sich daran
+halten, nehmen sie nicht auf.
+
+Die beiliegende `robots.txt` greift **nur**, wenn die Seite unter einer
+eigenen Domain im Wurzelverzeichnis liegt. Bei GitHub Pages als
+Projektseite (`…github.io/thaesser.animalboxing/`) wird sie unter einem
+Unterpfad ausgeliefert und dort von Crawlern ignoriert — verlassen könnt
+ihr euch dort allein auf das Meta-Tag. Wer die Seite wirklich privat
+halten will, legt sie nicht auf eine öffentliche URL.
+
 ## Steuerung im Kampf
 
 | | |
@@ -189,6 +221,8 @@ Gegenstand wird im Kampf in der Hand mitgeführt und steht im Bericht.
 Die schweren Sachen sind ein echter Zielkonflikt: Bierbank und Sprudelkiste
 hauen hart, kosten aber so viel Tempo, dass man gegen einen einzelnen
 grossen Gegner schlechter fährt als mit blanken Fäusten.
+
+Im Aufklappmenü stehen sie alphabetisch, „— nichts —" bleibt vorn.
 
 Neue Gegenstände kommen in `ITEMS`. Das Feld `mod` versteht `atk`, `def`,
 `spd`, `hp`, `reach`, `sweep`, `block`, `dodge`, `crit`, `luck`, `thorns`

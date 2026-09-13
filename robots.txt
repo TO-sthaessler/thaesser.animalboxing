@@ -1,0 +1,4 @@
+# Animal Boxing ist ein Spass fuer die Gruppe, keine oeffentliche Seite.
+# Bitte nicht indexieren.
+User-agent: *
+Disallow: /
